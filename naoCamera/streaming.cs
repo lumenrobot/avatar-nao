@@ -57,6 +57,7 @@ namespace naoCamera
                     encoder.Frames.Add(BitmapFrame.Create(imageBitmap));
                     ms = new MemoryStream();
                     encoder.Save(ms);
+                    
                     if (!flag)
                     {
                         

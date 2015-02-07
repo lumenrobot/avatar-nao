@@ -44,25 +44,6 @@ namespace LumenServer
             waitForClient();
             
         }
-        private static void demo()
-        {
-            Console.WriteLine("LUMEN SERVER VERSION 2.0");
-            Console.Write("Please enter NAO IP address : ");
-            Console.ReadLine();
-            Console.WriteLine("Connecting to NAO...");
-            delay(100);
-            Console.WriteLine("Initializing LUMEN Server...");
-            delay(2000);
-            Console.WriteLine("LUMEN Server is ready!");
-            Console.WriteLine("start retriving data from NAO");
-            delay(2000);
-            while (true)
-            {
-                Console.WriteLine("Server Status            : OK");
-                Console.WriteLine("Data Retriving status    : OK");
-                delay(500);
-            }
-        }
         private static void delay(int time)
         {
             Stopwatch s = new Stopwatch();
@@ -79,13 +60,17 @@ namespace LumenServer
             {
                 Console.Write("Please enter NAO IP address : ");
                 naoIP = Console.ReadLine();
+                if (naoIP == "localhost")
+                {
+                    naoIP = "127.0.0.1";
+                }
                 Console.WriteLine("Connecting to NAO...");
                 MotionProxy motion = new MotionProxy(naoIP, naoPort);
                 RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
                 TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort);
                 motion.wakeUp();
-                posture.goToPosture("Stand", 0.7f);
-                posture.goToPosture("Crouch", 0.7f);
+                posture.goToPosture("Stand", 0.8f);
+                posture.goToPosture("Crouch", 0.8f);
                 tts.say("I am connected to Lumen Server");
                 motion.rest();
                 

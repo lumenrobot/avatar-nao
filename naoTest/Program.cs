@@ -33,9 +33,16 @@ namespace naoTest
         
         static void Main(string[] args)
         {
-            testTactile();
+            testSpeaker();
         }
-
+        static void testSpeaker()
+        {
+            MemoryStream ms = new MemoryStream(File.ReadAllBytes(@"D:\M1F1-Alaw-AFsp.wav"));
+            Console.WriteLine("succesfully open file ");
+            WaveFileReader file = new WaveFileReader(ms);
+            Console.WriteLine("channel : " + file.WaveFormat.Channels);
+            Console.WriteLine("channel : " + file.WaveFormat.BitsPerSample);
+        }
         static void tesmotion()
         {
             Console.WriteLine("mulai");

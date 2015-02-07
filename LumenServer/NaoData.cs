@@ -13,6 +13,10 @@ using System.IO;
 using Aldebaran.Proxies;
 using System.Threading;
 using System.Diagnostics;
+using RabbitMQ.Client;
+using RabbitMQ.Client.MessagePatterns;
+using RabbitMQ.Client.Events;
+using Newtonsoft.Json;
 
 namespace LumenServer
 {
@@ -50,7 +54,6 @@ namespace LumenServer
     public class NaoTactile
     {
         public float value;
-        
     }
     public class NaoData
     {
@@ -61,6 +64,16 @@ namespace LumenServer
         public NaoSonar sonar = new NaoSonar();
         public List<NaoTactile> tactile = new List<NaoTactile>();
         Stopwatch delayTime = new Stopwatch();
+
+        //code related to Json and RabbitMQ
+        private IModel channel;
+        private Subscription sub;
+        private string imageDataKey = "lumen.NAO.data.image";
+        private string jointDataKey = "lumen.NAO.data.joint";
+        private string batteryDataKey = "lumen.NAO.data.battery";
+        private string sonarDataKey = "lumen.NAO.data.sonar";
+        private string tactileDataKey = "lumen.NAO.data.tactile";
+        //end
         public NaoData()
         {
             #region to define variable to contain image data
@@ -287,13 +300,14 @@ namespace LumenServer
             Thread batteryThread = new Thread(getBatteryData);
             Thread sonarThread = new Thread(getSonarData);
             Thread tactilThread = new Thread(getTactilData);
+            setUpChannel();
             try
             {
                 imageThread.Start();
-                jointThread.Start();
-                batteryThread.Start();
-                sonarThread.Start();
-                tactilThread.Start();
+                //jointThread.Start();
+                //batteryThread.Start();
+                //sonarThread.Start();
+                //tactilThread.Start();
             }
             catch (ThreadStartException e)
             {
@@ -303,6 +317,30 @@ namespace LumenServer
                 getNaoData();
             }
         }
+        //code related to Json and RabbitMQ
+        //this method is to set the channel for RabbitMQ
+        public void setUpChannel()
+        {
+            try
+            {
+                ConnectionFactory factory = new ConnectionFactory();
+                factory.Uri = "amqp://guest:guest@localhost/%2F";
+                IConnection conn = factory.CreateConnection();
+                channel = conn.CreateModel();
+                conn.AutoClose = true;
+                QueueDeclareOk jointStream = channel.QueueDeclare("", false, true, true, null);
+                
+                //channel.QueueBind(jointStream.QueueName, "amq.topic", jointStreamKey);
+                //sub = new Subscription(channel, jointStream.QueueName);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("error in setupRabbitMQ : " + e.ToString());
+            }
+            
+            
+        }
+        //end
         public void getImageData()
         {
             VideoDeviceProxy video = new VideoDeviceProxy(Program.naoIP, Program.naoPort);
@@ -345,6 +383,27 @@ namespace LumenServer
                     {
                         this.image[defaultImageId].data = ImageData;
                     }
+                    //Console.WriteLine("start encoding image");
+                    BitmapSource image1 = BitmapSource.Create(
+                                                320,
+                                                240,
+                                                96,
+                                                96,
+                                                PixelFormats.Rgb24,
+                                                BitmapPalettes.WebPalette,
+                                                ImageData,
+                                                320 * 3);
+                    JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(image1));
+                    MemoryStream ms = new MemoryStream();
+                    encoder.Save(ms);
+                    Bitmap image2 = new Bitmap(ms);
+                    string url = "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+                    ImageObject imageObject = new ImageObject(url.Length, url);
+                    string body = JsonConvert.SerializeObject(imageObject);
+                    byte[] buffer = Encoding.UTF8.GetBytes(body);
+                    channel.BasicPublish("amq.topic", "lumen.arkan.camera.stream", null, buffer);
+                    //Console.WriteLine("finish encoding image");
                     video.releaseImage(id);
                     if (!flag)
                     {
@@ -364,12 +423,20 @@ namespace LumenServer
         }
         public void getJointData()
         {
+            //Console.WriteLine("entering getJointData");
             List<float> angles = new List<float>();
             List<float> stiffnesses = new List<float>();
             MotionProxy motion = new MotionProxy(Program.naoIP, Program.naoPort);
             Stopwatch s = new Stopwatch();
             bool flag = false;
+
+            //code related to Json and RabbitMQ
+            string _name;
+            float _angle, _stiffness;
+            JointData _data;
+            //end
             tryRetriving:
+            
             try
             {
                 while (true)
@@ -385,8 +452,20 @@ namespace LumenServer
                         {
                             joint[i].angle = angles[i];
                             joint[i].stiffness = stiffnesses[i];
-                        }
 
+                            //code related to Json and RabbitMQ
+                            _name = joint[i].name;//save to temporary object
+                            _angle = joint[i].angle;
+                            _stiffness = joint[i].stiffness;
+                            
+                            //end
+                        }
+                        _data = new JointData(_name, _angle, _stiffness);
+                        //Console.WriteLine("start serializing");
+                        string jointData = JsonConvert.SerializeObject(_data,Formatting.Indented);
+                        //Console.WriteLine("finish Serializing");
+                        byte[] jointDataByte = Encoding.UTF8.GetBytes(jointData);
+                        channel.BasicPublish("amq.topic", jointDataKey, null, jointDataByte);
                     } 
                     //s.Stop();
                     if (!flag)
@@ -395,13 +474,14 @@ namespace LumenServer
                         flag = true;
                     }
                     //Console.WriteLine("joint : " + s.ElapsedMilliseconds.ToString());
-                    
+                    delay(1000);
                 }
             }
             catch(Exception e)
             {
                 Console.WriteLine("retriving joint data error");
                 Console.WriteLine(e.ToString());
+                delay(1000);
                 goto tryRetriving;
             }
         }
@@ -429,6 +509,13 @@ namespace LumenServer
                         this.battery.isCharging = _isCharging;
                         this.battery.isPlugged = _isPlugged;
                     }
+
+                    var data = new BatteryData(_percentage, _isPlugged, _isCharging);
+                    
+                    string stringData = JsonConvert.SerializeObject(data, Formatting.Indented);
+                    byte[] buffer = Encoding.UTF8.GetBytes(stringData);
+                    channel.BasicPublish("amq.topic", batteryDataKey, null, buffer);
+                    
                     //s.Stop();
                     //Console.WriteLine("battery : " + s.ElapsedMilliseconds.ToString());
                     if (!flag)
@@ -468,6 +555,11 @@ namespace LumenServer
                         this.sonar.leftSensor = left;
                         this.sonar.rightSensor = right;
                     }
+
+                    var data = new SonarData(right, left);
+                    string body = JsonConvert.SerializeObject(data);
+                    byte[] buffer = Encoding.UTF8.GetBytes(body);
+                    channel.BasicPublish("amq.topic", sonarDataKey, null, buffer);
                     //s.Stop();
                     //Console.WriteLine("sonar : " + s.ElapsedMilliseconds.ToString());
                     if (!flag)
