@@ -14,16 +14,23 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Diagnostics;
 
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using RabbitMQ.Client.MessagePatterns;
+
 namespace LumenServer
 {
     
     class Program
     {
-        private static Socket listenerSocket;
-        private static Socket handlerSocket;
         public static string naoIP;
         public static int naoPort = 9559;
-        public static NaoData data;
+
+        public static DataAquisition aquisition;
+        public static CommandHandler commandHandler;
+        public static DataBroadcast broadcast;
+        public static ConnectionFactory factory;
+        public static IConnection connection;
         //[STAThread]//**run this code to activate GUI**//
         static void Main(string[] args)
         {
@@ -33,28 +40,47 @@ namespace LumenServer
             //Application.Run(new ControlPanel());
 
 
+            connectToRabbitMQ();
 
-            
-            //setting up the server
-            setUp();
+            aquisition = new DataAquisition();
+            broadcast = new DataBroadcast();
+            commandHandler = new CommandHandler();
+            connectToNao();
             //start to retrive NAO data;
-            data = new NaoData();
-            data.getNaoData();
-            //start wait for client to connect
-            waitForClient();
-            
+
+            aquisition.startAquisitioning();
+            //start broadcasting data
+
+            broadcast.startBroadcasting();
+            //start handling command
+            commandHandler.startHandling();
+            //setting up the server
+            //while (true)
+            //{
+            //    if (aquisition.connection == false)
+            //    {
+            //        if (aquisition.connectionCheck.IsAlive == false && broadcast.connectionCheck.IsAlive == false && commandHandler.connectionCheck.IsAlive == false)
+            //        {
+            //            aquisition = new DataAquisition();
+            //            broadcast = new DataBroadcast();
+            //            commandHandler = new CommandHandler();
+            //            connectToNao();
+            //            //start to retrive NAO data;
+
+            //            aquisition.startAquisitioning();
+            //            //start broadcasting data
+
+            //            broadcast.startBroadcasting();
+            //            //start handling command
+            //            commandHandler.startHandling();
+            //        }
+            //    }
+            //}
         }
-        private static void delay(int time)
+        
+        private static void connectToNao()
         {
-            Stopwatch s = new Stopwatch();
-            s.Reset();
-            s.Start();
-            while (s.ElapsedMilliseconds < time) { }
-            s.Stop();
-        }
-        private static void setUp()
-        {
-            Console.WriteLine("LUMEN SERVER VERSION 2.0");
+            Console.WriteLine("NAO SERVER VERSION 3.0");
             tryConnect:
             try
             {
@@ -65,55 +91,37 @@ namespace LumenServer
                     naoIP = "127.0.0.1";
                 }
                 Console.WriteLine("Connecting to NAO...");
-                MotionProxy motion = new MotionProxy(naoIP, naoPort);
-                RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
+                //MotionProxy motion = new MotionProxy(naoIP, naoPort);
+                //RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
                 TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort);
-                motion.wakeUp();
-                posture.goToPosture("Stand", 0.8f);
-                posture.goToPosture("Crouch", 0.8f);
-                tts.say("I am connected to Lumen Server");
-                motion.rest();
-                
+                //motion.wakeUp();
+                //posture.goToPosture("Stand", 0.8f);
+                //posture.goToPosture("Crouch", 0.8f);
+                tts.say("I am connected to nao Server");
+                //motion.rest();
             }
             catch
             {
                 Console.WriteLine("unable to connect to NAO");
                 goto tryConnect;
             }
-
-            Console.WriteLine("Initializing LUMEN Server...");
-            listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            listenerSocket.Bind(new IPEndPoint(0, 2020));
-            listenerSocket.Listen(0);
-            Console.WriteLine("LUMEN Server is ready!");
+            Console.WriteLine("Initializing NAO Server...");
+            Console.WriteLine("NAO Server is ready!");
         }
-        private static void waitForClient()
+        private static void connectToRabbitMQ()
         {
-            byte[] buffer = new byte[1024];
-            int bufferSize;
-            MemoryStream msReceive;
-            BinaryReader br;
-            string message;
-            try
-            {
-                while (true)
-                {
-                    handlerSocket = listenerSocket.Accept();
-                    bufferSize = handlerSocket.Receive(buffer);
-                    msReceive = new MemoryStream(buffer);
-                    br = new BinaryReader(msReceive);
-                    message = br.ReadString();
-                    Console.WriteLine("new client is connected");
-                    ClientHandler client = new ClientHandler(handlerSocket, message);
-                }
-                listenerSocket.Close();
-                handlerSocket.Close();
-            }
-            catch(SocketException e)
-            {
-                Console.WriteLine("error in server");
-                Console.WriteLine("message : " + e.ToString());
-            }
+            factory = new ConnectionFactory();
+            factory.Uri = "amqp://guest:guest@localhost/%2F";
+            connection = factory.CreateConnection();
+
+        }
+        private static void delay(int time)
+        {
+            Stopwatch s = new Stopwatch();
+            s.Reset();
+            s.Start();
+            while (s.ElapsedMilliseconds < time) { }
+            s.Stop();
         }
     }
 }

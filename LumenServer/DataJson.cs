@@ -6,9 +6,7 @@ using Newtonsoft.Json;
 
 namespace LumenServer
 {
-    class DataJson
-    {
-    }
+    
     class ImageObject
     {
         [JsonProperty("name")]
@@ -27,16 +25,14 @@ namespace LumenServer
         public String DatePublished { get; set; }
         [JsonProperty("contentUrl")]
         public string ContentUrl { get; set; }
-        public ImageObject( long contentSize, string contentUrl)
+        public ImageObject()
         {
-            this.Name = "wajah1_240.jpg";
-            this.ContentSize = contentSize;
+            //this.Name = "from_nao.jpg";
             this.ContentType = "image/jpeg";
-            this.ContentUrl = contentUrl;
-            this.UploadDate = DateTime.Now.ToString();
-            this.DateCreated = DateTime.Now.ToString();
-            this.DateModified = DateTime.Now.ToString();
-            this.DatePublished = DateTime.Now.ToString();
+            this.UploadDate = DateTime.Now.Date.ToString();
+            this.DateCreated = DateTime.Now.Date.ToString();
+            this.DateModified = DateTime.Now.Date.ToString();
+            this.DatePublished = DateTime.Now.Date.ToString();
         }
         public override string ToString()
         {
@@ -46,61 +42,36 @@ namespace LumenServer
     public class JointData 
     {
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public List<string> Names { get; set; }
         [JsonProperty("angle")]
-        public float Angle { get; set; }
+        public List<float> Angles { get; set; }
         [JsonProperty("stiffness")]
-        public float Stiffness { get; set; }
-
-        public JointData(string name, float angle,float stiffness)
-        {
-            this.Name = name;
-            this.Angle = angle;
-            this.Stiffness = stiffness;
-        }
-
-        public override string ToString()
-        {
-            return Name + " " + Angle + " " + Stiffness;
-        }
+        public List<float> Stiffnesses { get; set; }
         
     }
     public class BatteryData 
     {
         [JsonProperty("percentage")]
-        public int percentage { get; set; }
+        public int Percentage { get; set; }
         [JsonProperty("isPlugged")]
-        public bool isPlugged { get; set; }
+        public bool IsPlugged { get; set; }
         [JsonProperty("isCharging")]
-        public bool isCharging { get; set; }
+        public bool IsCharging { get; set; }
 
-        public BatteryData(int Percentage, bool IsPlugged, bool IsCharging)
-        {
-            this.percentage = Percentage;
-            this.isPlugged = IsPlugged;
-            this.isCharging = isCharging;
-        }
     }
     public class SonarData
     {
         [JsonProperty("rightSensor")]
-        public float rightSensor { get; set; }
+        public float RightSensor { get; set; }
         [JsonProperty("leftSensor")]
-        public float leftSensor { get; set; }
+        public float LeftSensor { get; set; }
 
-        public SonarData(float RightSensor, float LeftSensor)
-        {
-            this.rightSensor = RightSensor;
-            this.leftSensor = LeftSensor;
-        }
     }
     public class TactileData
     {
+        [JsonProperty("name")]
+        public List<string> Names { get; set; }
         [JsonProperty("value")]
-        public float value { get; set; }
-        public TactileData(float Value)
-        {
-            this.value = Value;
-        }
+        public List<float> Values { get; set; }
     }
 }

@@ -18,7 +18,48 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            testJason();
+            tetsCommand();
+        }
+        static void tetsCommand()
+        {
+            Console.WriteLine("setting connection");
+            IModel channel;
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.Uri = "amqp://guest:guest@localhost/%2F";
+            IConnection conn = factory.CreateConnection();
+            channel = conn.CreateModel();
+            conn.AutoClose = true;
+            QueueDeclareOk queue = channel.QueueDeclare("", false, true, true, null);
+            string channelKey = "avatar.NAO.command";
+
+            Command wakeUp = new Command { type = "motion", method = "wakeUp" };
+            string body1 = JsonConvert.SerializeObject(wakeUp);
+            byte[] buffer1 = Encoding.UTF8.GetBytes(body1);
+            Console.WriteLine("sending wakeUp");
+            channel.BasicPublish("amq.topic", channelKey, null, buffer1);
+            Console.WriteLine("finish sending wakeUp");
+            Console.ReadKey();
+
+            List<string> name = new List<string>{ "LShoulderPitch", "RShoulderPitch" };
+            List<float> angle =  new List<float>{ 0.5f, 0.5f };
+            float s = 0.2f;
+            Parameter par = new Parameter { jointName = name, angles = angle, speed = s };
+            Command setAngle = new Command { type = "motion", method = "setAngles", parameter = par };
+            string body2 = JsonConvert.SerializeObject(setAngle);
+            byte[] buffer2 = Encoding.UTF8.GetBytes(body2);
+            Console.WriteLine("seding setAngle");
+            channel.BasicPublish("amq.topic", channelKey, null, buffer2);
+            Console.WriteLine("finish sending setAngles");
+            Console.ReadKey();
+
+            Command rest = new Command { type = "motion", method = "rest" };
+            string body3 = JsonConvert.SerializeObject(rest);
+            byte[] buffer3 = Encoding.UTF8.GetBytes(body3);
+            Console.WriteLine("seding rest");
+            channel.BasicPublish("amq.topic", channelKey, null, buffer3);
+            Console.WriteLine("finish sending rest");
+            Console.ReadKey();
+
         }
         static void testJason()
         {
@@ -28,7 +69,7 @@ namespace Client
             IModel channelJoint,channelBattery;
             Subscription subJoint,subBattery;
             ConnectionFactory factory = new ConnectionFactory();
-            factory.Uri = "amqp://guest:guest@localhost/%2F";
+            factory.Uri = "amqp://lumen:lumen@167.205.66.186/%2F";
             IConnection conn = factory.CreateConnection();
             channelJoint = conn.CreateModel();
             channelBattery = conn.CreateModel();
@@ -52,16 +93,21 @@ namespace Client
                     try
                     {
                         string body = Encoding.UTF8.GetString(ev.Body);
-                        JsonSerializerSettings setting = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Objects};
-                        BatteryData data = JsonConvert.DeserializeObject<BatteryData>(body,setting);
-                        Console.WriteLine("percentage : " + data.percentage);
-                        Console.WriteLine("isCharging : " + data.isCharging);
-                        Console.WriteLine("isPlugged : " + data.isPlugged);
+                        Console.WriteLine("okokoko ko");
+                        //JsonSerializerSettings setting = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Objects};
+                        //BatteryData data = JsonConvert.DeserializeObject<BatteryData>(body,setting);
+                        //Console.WriteLine("percentage : " + data.percentage);
+                        //Console.WriteLine("isCharging : " + data.isCharging);
+                        //Console.WriteLine("isPlugged : " + data.isPlugged);
                     }
                     finally
                     {
                         subBattery.Ack(ev);
                     }
+                }
+                else
+                {
+                    Console.WriteLine("no no no");
                 }
                 //if (subJoint.Next(0, out ev))
                 //{
