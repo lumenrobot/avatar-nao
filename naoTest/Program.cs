@@ -33,21 +33,39 @@ namespace naoTest
         
         static void Main(string[] args)
         {
+<<<<<<< HEAD
             testAudio2();
+=======
+            tesmotion();
+            Console.Read();
+        }
+        static void testSpeaker()
+        {
+            MemoryStream ms = new MemoryStream(File.ReadAllBytes(@"D:\M1F1-Alaw-AFsp.wav"));
+            Console.WriteLine("succesfully open file ");
+            WaveFileReader file = new WaveFileReader(ms);
+            Console.WriteLine("channel : " + file.WaveFormat.Channels);
+            Console.WriteLine("channel : " + file.WaveFormat.BitsPerSample);
+>>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
         }
         
         static void tesmotion()
         {
             Console.WriteLine("mulai");
-            MotionProxy tesmotion = new MotionProxy("167.205.56.180", 9559);
+            MotionProxy tesmotion = new MotionProxy("167.205.56.142", 9559);
+            List<float> angle = tesmotion.getAngles("Body", false);
+            ArrayList angles = new ArrayList();
+            angles.Add(0.5f);
+            angles.Add(0.5f);
+            ArrayList nama = new ArrayList();
+            nama.Add("LShoulderPitch");
+            nama.Add("RShoulderPitch");
             tesmotion.wakeUp();
-            tesmotion.moveInit();
-            tesmotion.moveTo(0.2f, 0.0f, 0.0f);
-            
-            //tesmotion.moveTo(0.0f, 0.0f, -1.57f);
-            //tesmotion.moveTo(0.3f, 0.0f, 0.0f);
-            //tesmotion.moveTo(0.0f, 0.0f, 1.57f);
-            //tesmotion.moveTo(0.2f, 0.0f, 0.0f);
+            tesmotion.setAngles(nama, angles, 0.4f);
+            for (int i = 0; i < angle.Count; i++)
+            {
+                Console.WriteLine("angle : " + angle[i]);
+            }
             tesmotion.rest();
             Console.WriteLine("selesai");
             Console.ReadKey();

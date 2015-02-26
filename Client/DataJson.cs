@@ -63,4 +63,7 @@ namespace Client
             this.Parameter = parameter;
         }
     }
+   
+
+   
 }

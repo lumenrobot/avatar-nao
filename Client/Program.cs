@@ -19,17 +19,62 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            testJason();
+            tetsCommand();
+        }
+        static void tetsCommand()
+        {
+            Console.WriteLine("setting connection");
+            IModel channel;
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.Uri = "amqp://guest:guest@localhost/%2F";
+            IConnection conn = factory.CreateConnection();
+            channel = conn.CreateModel();
+            conn.AutoClose = true;
+            QueueDeclareOk queue = channel.QueueDeclare("", false, true, true, null);
+            string channelKey = "avatar.NAO.command";
+
+            Command wakeUp = new Command { type = "motion", method = "wakeUp" };
+            string body1 = JsonConvert.SerializeObject(wakeUp);
+            byte[] buffer1 = Encoding.UTF8.GetBytes(body1);
+            Console.WriteLine("sending wakeUp");
+            channel.BasicPublish("amq.topic", channelKey, null, buffer1);
+            Console.WriteLine("finish sending wakeUp");
+            Console.ReadKey();
+
+            List<string> name = new List<string>{ "LShoulderPitch", "RShoulderPitch" };
+            List<float> angle =  new List<float>{ 0.5f, 0.5f };
+            float s = 0.2f;
+            Parameter par = new Parameter { jointName = name, angles = angle, speed = s };
+            Command setAngle = new Command { type = "motion", method = "setAngles", parameter = par };
+            string body2 = JsonConvert.SerializeObject(setAngle);
+            byte[] buffer2 = Encoding.UTF8.GetBytes(body2);
+            Console.WriteLine("seding setAngle");
+            channel.BasicPublish("amq.topic", channelKey, null, buffer2);
+            Console.WriteLine("finish sending setAngles");
+            Console.ReadKey();
+
+            Command rest = new Command { type = "motion", method = "rest" };
+            string body3 = JsonConvert.SerializeObject(rest);
+            byte[] buffer3 = Encoding.UTF8.GetBytes(body3);
+            Console.WriteLine("seding rest");
+            channel.BasicPublish("amq.topic", channelKey, null, buffer3);
+            Console.WriteLine("finish sending rest");
+            Console.ReadKey();
+
         }
         static void sendWav()
         {
             Console.WriteLine("setting connection");
             IModel channel,cha;
             ConnectionFactory factory = new ConnectionFactory();
+<<<<<<< HEAD
             factory.Uri = "amqp://lumen:lumen@167.205.66.130/%2F";
             string channelKey = "lumen.arkan.wav.stream";
             string key = "lumen.arkan.speech.recognition";
             
+=======
+            factory.Uri = "amqp://lumen:lumen@167.205.66.186/%2F";
+>>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
             IConnection conn = factory.CreateConnection();
             channel = conn.CreateModel();
             cha = conn.CreateModel();
@@ -81,6 +126,7 @@ namespace Client
                 {
                     try
                     {
+<<<<<<< HEAD
                         if (sub.Next(0, out ev))
 
                         {
@@ -93,11 +139,21 @@ namespace Client
                             Console.WriteLine(coba.result);
                             Console.WriteLine(coba.date);
                         }
+=======
+                        string body = Encoding.UTF8.GetString(ev.Body);
+                        Console.WriteLine("okokoko ko");
+                        //JsonSerializerSettings setting = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Objects};
+                        //BatteryData data = JsonConvert.DeserializeObject<BatteryData>(body,setting);
+                        //Console.WriteLine("percentage : " + data.percentage);
+                        //Console.WriteLine("isCharging : " + data.isCharging);
+                        //Console.WriteLine("isPlugged : " + data.isPlugged);
+>>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
                     }
                     finally
                     {
                     }
                 }
+<<<<<<< HEAD
             }
             catch
             {
@@ -143,6 +199,26 @@ namespace Client
                 Command setangle = new Command("motion", "setAngles", par);
                 string body3 = JsonConvert.SerializeObject(setangle);
                 byte[] buf3 = Encoding.UTF8.GetBytes(body3);
+=======
+                else
+                {
+                    Console.WriteLine("no no no");
+                }
+                //if (subJoint.Next(0, out ev))
+                //{
+                //    try
+                //    {
+                //        string body = Encoding.UTF8.GetString(ev.Body);
+                //        JsonSerializerSettings setting = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
+                //        JointData data = JsonConvert.DeserializeObject<JointData>(body, setting);
+                //        Console.WriteLine("message : " + body);
+                //    }
+                //    finally
+                //    {
+                //        subJoint.Ack(ev);
+                //    }
+                //}
+>>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
                 
                 Console.WriteLine("sending command");
                 channel.BasicPublish("amq.topic", channelKey, null, buf3);
