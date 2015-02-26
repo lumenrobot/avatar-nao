@@ -33,7 +33,8 @@ namespace naoTest
         
         static void Main(string[] args)
         {
-            testSpeaker();
+            tesmotion();
+            Console.Read();
         }
         static void testSpeaker()
         {
@@ -46,15 +47,20 @@ namespace naoTest
         static void tesmotion()
         {
             Console.WriteLine("mulai");
-            MotionProxy tesmotion = new MotionProxy("167.205.56.180", 9559);
+            MotionProxy tesmotion = new MotionProxy("167.205.56.142", 9559);
+            List<float> angle = tesmotion.getAngles("Body", false);
+            ArrayList angles = new ArrayList();
+            angles.Add(0.5f);
+            angles.Add(0.5f);
+            ArrayList nama = new ArrayList();
+            nama.Add("LShoulderPitch");
+            nama.Add("RShoulderPitch");
             tesmotion.wakeUp();
-            tesmotion.moveInit();
-            tesmotion.moveTo(0.2f, 0.0f, 0.0f);
-            
-            //tesmotion.moveTo(0.0f, 0.0f, -1.57f);
-            //tesmotion.moveTo(0.3f, 0.0f, 0.0f);
-            //tesmotion.moveTo(0.0f, 0.0f, 1.57f);
-            //tesmotion.moveTo(0.2f, 0.0f, 0.0f);
+            tesmotion.setAngles(nama, angles, 0.4f);
+            for (int i = 0; i < angle.Count; i++)
+            {
+                Console.WriteLine("angle : " + angle[i]);
+            }
             tesmotion.rest();
             Console.WriteLine("selesai");
             Console.ReadKey();
