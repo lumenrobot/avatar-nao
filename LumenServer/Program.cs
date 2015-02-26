@@ -42,18 +42,18 @@ namespace LumenServer
 
             connectToRabbitMQ();
 
-            //aquisition = new DataAquisition();
-            //broadcast = new DataBroadcast();
+            aquisition = new DataAquisition();
+            broadcast = new DataBroadcast();
             commandHandler = new CommandHandler();
             connectToNao();
             //start to retrive NAO data;
 
-            //aquisition.startAquisitioning();
+            aquisition.startAquisitioning();
             //start broadcasting data
-
-            //broadcast.startBroadcasting();
+            broadcast.startBroadcasting();
             //start handling command
             commandHandler.startHandling();
+
             //setting up the server
             //while (true)
             //{

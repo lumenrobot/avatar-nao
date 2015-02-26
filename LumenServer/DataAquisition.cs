@@ -50,10 +50,10 @@ namespace LumenServer
             batteryReady = true;
             tactileReady = true;
             sonarReady = true;
-            if (connectionCheck.IsAlive == false)
-            {
-                connectionCheck.Start();
-            }
+            //if (connectionCheck.IsAlive == false)
+            //{
+            //    connectionCheck.Start();
+            //}
         }
         private void checkConnection()
         {

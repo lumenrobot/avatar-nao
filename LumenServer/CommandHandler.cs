@@ -49,7 +49,7 @@ namespace LumenServer
             audio = new AudioDeviceProxy(Program.naoIP, Program.naoPort);
             handler = new Thread(commandHandling);
             handler.Start();
-            Console.WriteLine("ready to handle command!");
+            Console.WriteLine("Ready to handle command!");
         }
         private void checkConnection()
         {
@@ -72,7 +72,7 @@ namespace LumenServer
                     try
                     {
                         string body = Encoding.UTF8.GetString(basicEvent.Body);
-                        Console.WriteLine("incoming command");
+                        Console.WriteLine("new incoming command!");
                         JsonSerializerSettings setting = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
                         Command command = JsonConvert.DeserializeObject<Command>(body, setting);
                         switch (command.type.ToLower())
@@ -124,44 +124,44 @@ namespace LumenServer
                     Console.WriteLine("execution motion.rest() finished");
                     break;
                 case "setangles":
-                    Console.WriteLine("execution motion.setAngle() finished");
+                    Console.WriteLine("executing motion.setAngle()");
                     motion.setAngles(new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.angles), newCommand.parameter.speed);
-                    Console.WriteLine("finish : setAngles");
+                    Console.WriteLine("execution motion.setAngle() finished");
                     break;
                 case "changeangle":
-                    Console.WriteLine("case : changeangle");
+                    Console.WriteLine("executing motion.changeangle()");
                     motion.changeAngles(new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.angles), newCommand.parameter.speed);
-                    Console.WriteLine("finish : changeangle");
+                    Console.WriteLine("execution motion.changeangle() finished");
                     break;
                 case "setStiffnesses":
-                    Console.WriteLine("case : setStiffnesses");
+                    Console.WriteLine("executing motion.setStiffnesses()");
                     motion.setStiffnesses (new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.stiffnessess));
-                    Console.WriteLine("finish : setStiffnesses");
+                    Console.WriteLine("execution motion.setStiffnesses() finished");
                     break;
                 case "closehand":
-                    Console.WriteLine("case : closehand");
+                    Console.WriteLine("executing motion.closehand()");
                     motion.closeHand (newCommand.parameter.handName);
-                    Console.WriteLine("finish : closehand");
+                    Console.WriteLine("execution motion.closehand() finished");
                     break;
                 case "openhand":
-                    Console.WriteLine("case : openhand");
+                    Console.WriteLine("executing motion.openhand()");
                     motion.closeHand(newCommand.parameter.handName);
-                    Console.WriteLine("finish : openhand");
+                    Console.WriteLine("execution motion.openhand() finished");
                     break;
                 case "moveinit":
-                    Console.WriteLine("case : moveinit");
+                    Console.WriteLine("executing motion.moveinit()");
                     motion.moveInit();
-                    Console.WriteLine("finish : moveinit");
+                    Console.WriteLine("execution motion.moveinit() finished");
                     break;
                 case "moveto":
-                    Console.WriteLine("case : moveto");
+                    Console.WriteLine("executing motion.moveto()");
                     motion.moveTo(newCommand.parameter.x, newCommand.parameter.y, newCommand.parameter.tetha);
-                    Console.WriteLine("finish : moveto");
+                    Console.WriteLine("execution motion.moveto() finished");
                     break;
                 case "setwalkarmsenabled":
-                    Console.WriteLine("case : setwalkarmsenabled");
+                    Console.WriteLine("executing motion.setwalkarmsenabled()");
                     motion.setWalkArmsEnabled(newCommand.parameter.LHand, newCommand.parameter.RHand);
-                    Console.WriteLine("finish : setwalkarmsenabled");
+                    Console.WriteLine("execution motion.setwalkarmsenabled() finished");
                     break;
                 default:
                     Console.WriteLine(newCommand.method);
@@ -174,10 +174,14 @@ namespace LumenServer
             switch (newCommand.method.ToLower())
             {
                 case "gotoposture":
+                    Console.WriteLine("executing posture.gotoposture()");
                     posture.goToPosture(newCommand.parameter.postureName, newCommand.parameter.speed);
+                    Console.WriteLine("execution posture.gotoposture() finished");
                     break;
                 case "stopmove":
+                    Console.WriteLine("executing posture.stopmove()");
                     posture.stopMove();
+                    Console.WriteLine("execution posture.stopmove() finished");
                     break;
 
             }
@@ -187,10 +191,14 @@ namespace LumenServer
             switch (newCommand.method.ToLower())
             {
                 case "say":
+                    Console.WriteLine("executing texttospeech.say()");
                     tts.say(newCommand.parameter.text);
+                    Console.WriteLine("execution texttospeech.say() finished");
                     break;
                 case "setlanguage":
+                    Console.WriteLine("executing texttospeech.setlanguage()");
                     tts.setLanguage(newCommand.parameter.language);
+                    Console.WriteLine("execution texttospeech.setlanguage() finished");
                     break;
             }
         }
