@@ -11,6 +11,10 @@ using RabbitMQ.Client.Events;
 using RabbitMQ.Client.MessagePatterns;
 using System.Threading;
 using System.Collections;
+using NAudio;
+using NAudio.Wave;
+using NAudio.WindowsMediaFormat;
+using System.IO;
 namespace LumenServer
 {
     class CommandHandler
@@ -21,6 +25,7 @@ namespace LumenServer
         MotionProxy motion;
         RobotPostureProxy posture;
         TextToSpeechProxy tts;
+        AudioDeviceProxy audio;
         Thread handler;
         public Thread connectionCheck;
         public CommandHandler()
@@ -41,12 +46,10 @@ namespace LumenServer
             motion = new MotionProxy(Program.naoIP, Program.naoPort);
             posture = new RobotPostureProxy(Program.naoIP, Program.naoPort);
             tts = new TextToSpeechProxy(Program.naoIP, Program.naoPort);
+            audio = new AudioDeviceProxy(Program.naoIP, Program.naoPort);
             handler = new Thread(commandHandling);
             handler.Start();
-            if (connectionCheck.IsAlive == false)
-            {
-                connectionCheck.Start();
-            }
+            Console.WriteLine("ready to handle command!");
         }
         private void checkConnection()
         {
@@ -75,16 +78,16 @@ namespace LumenServer
                         switch (command.type.ToLower())
                         {
                             case "motion":
-                                Console.WriteLine("case : motion");
                                 motionHandling(command);
                                 break;
                             case "posture":
-                                Console.WriteLine("case : posture");
                                 postureHandling(command);
                                 break;
                             case "texttospeech":
-                                Console.WriteLine("case : tts");
                                 ttsHandling(command);
+                                break;
+                            case "audiodevice":
+                                audioDeviceHandling(command);
                                 break;
                             default:
                                 Console.WriteLine(command.type);
@@ -111,17 +114,17 @@ namespace LumenServer
             switch (newCommand.method.ToLower())
             {
                 case "wakeup":
-                    Console.WriteLine("case : wakeUp");
+                    Console.WriteLine("executing motion.wakeUp()");
                     motion.wakeUp();
-                    Console.WriteLine("finish : wakeUp");
+                    Console.WriteLine("execution motion.wakeUp() finished");
                     break;
-                case "rest":
-                    Console.WriteLine("case : rest");
+                case "rest": 
+                    Console.WriteLine("executing motion.rest()");
                     motion.rest();
-                    Console.WriteLine("finish : rest");
+                    Console.WriteLine("execution motion.rest() finished");
                     break;
                 case "setangles":
-                    Console.WriteLine("case : setAngles");
+                    Console.WriteLine("execution motion.setAngle() finished");
                     motion.setAngles(new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.angles), newCommand.parameter.speed);
                     Console.WriteLine("finish : setAngles");
                     break;
@@ -188,6 +191,58 @@ namespace LumenServer
                     break;
                 case "setlanguage":
                     tts.setLanguage(newCommand.parameter.language);
+                    break;
+            }
+        }
+        private void audioDeviceHandling(Command newCommand)
+        {
+            switch (newCommand.method.ToLower())
+            {
+                case "sendremotebuffertooutput":
+                    Console.WriteLine("executing audioDevice.sendRemoteBufferToOutput()");
+                    byte[] wavData = Convert.FromBase64String(newCommand.parameter.wavFile);
+                    MemoryStream ms = new MemoryStream(wavData);
+                    WaveFileReader wavFile = new WaveFileReader(ms);
+                    int nbOfChannels = wavFile.WaveFormat.Channels;
+                    int sampleRate = wavFile.WaveFormat.SampleRate;
+                    int numberOfOutputChannels = 2;
+                    byte[] buffer = new byte[2 * (int)wavFile.SampleCount];
+                    int byteRead = wavFile.Read(buffer, 0, 2 * (int)wavFile.SampleCount);
+                    int nbOfFrames = byteRead / 2;
+                    short[] fInputAudioData = new short[(int)wavFile.SampleCount];
+                    short[] fStereoAudioData = new short[2* (int)wavFile.SampleCount];
+                    int sample = 0;
+                    for (int index = 0; index < nbOfFrames; index++)
+                    {
+                        fInputAudioData[index] = BitConverter.ToInt16(buffer, sample);
+                        sample += 2;
+                    }
+                    if (nbOfChannels == 1)
+                    {
+                        int i = 0;
+                        for (int j = 0; j < nbOfFrames; j++)
+                        {
+                            fStereoAudioData[i] = fInputAudioData[j];
+                            fStereoAudioData[i + 1] = fInputAudioData[j];
+                            i += numberOfOutputChannels;
+                        }
+                    }
+                    else if (nbOfChannels == 2)
+                    {
+                        for (int i = 0; i < nbOfFrames; i++)
+                        {
+                            fStereoAudioData[i] = fInputAudioData[i];
+                        }
+                    }
+                    try
+                    {
+                        audio.setParameter("outputSampleRate", sampleRate);
+                        audio.sendRemoteBufferToOutput(nbOfFrames, fStereoAudioData);
+                    }
+                    catch
+                    {
+                    }
+                    Console.WriteLine("execution audioDevice.sendRemoteBufferToOutput() finished");
                     break;
             }
         }

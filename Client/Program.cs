@@ -19,62 +19,37 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            tetsCommand();
+            sendCommandWav();
         }
-        static void tetsCommand()
+        static void sendCommandWav()
         {
             Console.WriteLine("setting connection");
             IModel channel;
             ConnectionFactory factory = new ConnectionFactory();
             factory.Uri = "amqp://guest:guest@localhost/%2F";
+            string channelKey = "avatar.NAO.command";
             IConnection conn = factory.CreateConnection();
             channel = conn.CreateModel();
-            conn.AutoClose = true;
-            QueueDeclareOk queue = channel.QueueDeclare("", false, true, true, null);
-            string channelKey = "avatar.NAO.command";
-
-            Command wakeUp = new Command { type = "motion", method = "wakeUp" };
-            string body1 = JsonConvert.SerializeObject(wakeUp);
-            byte[] buffer1 = Encoding.UTF8.GetBytes(body1);
-            Console.WriteLine("sending wakeUp");
-            channel.BasicPublish("amq.topic", channelKey, null, buffer1);
-            Console.WriteLine("finish sending wakeUp");
+            byte[] byteWav = File.ReadAllBytes(@"D:\wav\aaaa.wav");
+            string stringWav = Convert.ToBase64String(byteWav);
+            Parameter par = new Parameter { wavFile = stringWav };
+            Command com = new Command { type = "audiodevice", method = "sendremotebuffertooutput", parameter = par };
+            string body = JsonConvert.SerializeObject(com);
+            byte[] buffer = Encoding.UTF8.GetBytes(body);
+            channel.BasicPublish("amq.topic", channelKey, null, buffer);
+            Console.WriteLine("succesfully sending file");
             Console.ReadKey();
-
-            List<string> name = new List<string>{ "LShoulderPitch", "RShoulderPitch" };
-            List<float> angle =  new List<float>{ 0.5f, 0.5f };
-            float s = 0.2f;
-            Parameter par = new Parameter { jointName = name, angles = angle, speed = s };
-            Command setAngle = new Command { type = "motion", method = "setAngles", parameter = par };
-            string body2 = JsonConvert.SerializeObject(setAngle);
-            byte[] buffer2 = Encoding.UTF8.GetBytes(body2);
-            Console.WriteLine("seding setAngle");
-            channel.BasicPublish("amq.topic", channelKey, null, buffer2);
-            Console.WriteLine("finish sending setAngles");
-            Console.ReadKey();
-
-            Command rest = new Command { type = "motion", method = "rest" };
-            string body3 = JsonConvert.SerializeObject(rest);
-            byte[] buffer3 = Encoding.UTF8.GetBytes(body3);
-            Console.WriteLine("seding rest");
-            channel.BasicPublish("amq.topic", channelKey, null, buffer3);
-            Console.WriteLine("finish sending rest");
-            Console.ReadKey();
-
         }
         static void sendWav()
         {
             Console.WriteLine("setting connection");
             IModel channel,cha;
             ConnectionFactory factory = new ConnectionFactory();
-<<<<<<< HEAD
             factory.Uri = "amqp://lumen:lumen@167.205.66.130/%2F";
             string channelKey = "lumen.arkan.wav.stream";
             string key = "lumen.arkan.speech.recognition";
             
-=======
             factory.Uri = "amqp://lumen:lumen@167.205.66.186/%2F";
->>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
             IConnection conn = factory.CreateConnection();
             channel = conn.CreateModel();
             cha = conn.CreateModel();
@@ -83,7 +58,7 @@ namespace Client
             Subscription sub = new Subscription(cha, qu.QueueName);
             conn.AutoClose = true;
 
-            byte[] data = File.ReadAllBytes(@"D:\aaaa.wav");
+            byte[] data = File.ReadAllBytes(@"D:\wav\aaaa.wav");
             string cont = Convert.ToBase64String(data);
             sound s = new sound { name = "M1F1-Alaw-AFsp.wav", content = cont };
             string body = JsonConvert.SerializeObject(s);
@@ -126,7 +101,6 @@ namespace Client
                 {
                     try
                     {
-<<<<<<< HEAD
                         if (sub.Next(0, out ev))
 
                         {
@@ -139,7 +113,6 @@ namespace Client
                             Console.WriteLine(coba.result);
                             Console.WriteLine(coba.date);
                         }
-=======
                         string body = Encoding.UTF8.GetString(ev.Body);
                         Console.WriteLine("okokoko ko");
                         //JsonSerializerSettings setting = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Objects};
@@ -147,100 +120,91 @@ namespace Client
                         //Console.WriteLine("percentage : " + data.percentage);
                         //Console.WriteLine("isCharging : " + data.isCharging);
                         //Console.WriteLine("isPlugged : " + data.isPlugged);
->>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
                     }
                     finally
                     {
                     }
                 }
-<<<<<<< HEAD
             }
             catch
             {
             }
         }
-        static void testCommandJson()
-        {
-            try
-            {
-                Console.WriteLine("setting connection");
-                IModel channel;
-                ConnectionFactory factory = new ConnectionFactory();
-                factory.Uri = "amqp://lumen:lumen@167.205.66.130/%2F";
-                string channelKey = "avatar.NAO.command";
-                IConnection conn = factory.CreateConnection();
-                channel = conn.CreateModel();
-                conn.AutoClose = true;
-                QueueDeclareOk queue = channel.QueueDeclare("", true, false, true, null);
-                Command newCommand = new Command("Motion", "wakeUp", "");
-                string body = JsonConvert.SerializeObject(newCommand);
-                byte[] buffer = Encoding.UTF8.GetBytes(body);
-                Console.WriteLine("sending command");
-                channel.BasicPublish("amq.topic", channelKey, null, buffer);
-                Console.WriteLine("command Sent");
-                Console.ReadKey();
+        //static void testCommandJson()
+        //{
+        //    try
+        //    {
+        //        Console.WriteLine("setting connection");
+        //        IModel channel;
+        //        ConnectionFactory factory = new ConnectionFactory();
+        //        factory.Uri = "amqp://lumen:lumen@167.205.66.130/%2F";
+        //        string channelKey = "avatar.NAO.command";
+        //        IConnection conn = factory.CreateConnection();
+        //        channel = conn.CreateModel();
+        //        conn.AutoClose = true;
+        //        QueueDeclareOk queue = channel.QueueDeclare("", true, false, true, null);
+        //        Command newCommand = new Command("Motion", "wakeUp", "");
+        //        string body = JsonConvert.SerializeObject(newCommand);
+        //        byte[] buffer = Encoding.UTF8.GetBytes(body);
+        //        Console.WriteLine("sending command");
+        //        channel.BasicPublish("amq.topic", channelKey, null, buffer);
+        //        Console.WriteLine("command Sent");
+        //        Console.ReadKey();
 
                 
-                ArrayList joint = new ArrayList();
-                joint.Add("RShoulderPitch");
-                joint.Add("LShoulderPitch");
-                object o1 = (object)joint;
-                ArrayList angle = new ArrayList();
-                angle.Add(0.5f);
-                angle.Add(0.5f);
-                object o2 = (object)angle;
-                object o3 = (object)0.2f;
-                ArrayList parameter = new ArrayList();
-                parameter.Add(o1);
-                parameter.Add(o2);
-                parameter.Add(o3);
-                object par = (object)parameter;
+        //        ArrayList joint = new ArrayList();
+        //        joint.Add("RShoulderPitch");
+        //        joint.Add("LShoulderPitch");
+        //        object o1 = (object)joint;
+        //        ArrayList angle = new ArrayList();
+        //        angle.Add(0.5f);
+        //        angle.Add(0.5f);
+        //        object o2 = (object)angle;
+        //        object o3 = (object)0.2f;
+        //        ArrayList parameter = new ArrayList();
+        //        parameter.Add(o1);
+        //        parameter.Add(o2);
+        //        parameter.Add(o3);
+        //        object par = (object)parameter;
 
-                Command setangle = new Command("motion", "setAngles", par);
-                string body3 = JsonConvert.SerializeObject(setangle);
-                byte[] buf3 = Encoding.UTF8.GetBytes(body3);
-=======
-                else
-                {
-                    Console.WriteLine("no no no");
-                }
-                //if (subJoint.Next(0, out ev))
-                //{
-                //    try
-                //    {
-                //        string body = Encoding.UTF8.GetString(ev.Body);
-                //        JsonSerializerSettings setting = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
-                //        JointData data = JsonConvert.DeserializeObject<JointData>(body, setting);
-                //        Console.WriteLine("message : " + body);
-                //    }
-                //    finally
-                //    {
-                //        subJoint.Ack(ev);
-                //    }
-                //}
->>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
-                
-                Console.WriteLine("sending command");
-                channel.BasicPublish("amq.topic", channelKey, null, buf3);
-                Console.WriteLine("command Sent");
-                Console.ReadKey();
+        //        Command setangle = new Command("motion", "setAngles", par);
+        //        string body3 = JsonConvert.SerializeObject(setangle);
+        //        byte[] buf3 = Encoding.UTF8.GetBytes(body3);
+        //        //if (subJoint.Next(0, out ev))
+        //        //{
+        //        //    try
+        //        //    {
+        //        //        string body = Encoding.UTF8.GetString(ev.Body);
+        //        //        JsonSerializerSettings setting = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
+        //        //        JointData data = JsonConvert.DeserializeObject<JointData>(body, setting);
+        //        //        Console.WriteLine("message : " + body);
+        //        //    }
+        //        //    finally
+        //        //    {
+        //        //        subJoint.Ack(ev);
+        //        //    }
+        //        //}
+        //        Console.WriteLine("sending command");
+        //        channel.BasicPublish("amq.topic", channelKey, null, buf3);
+        //        Console.WriteLine("command Sent");
+        //        Console.ReadKey();
 
-                Command comm2 = new Command("Motion", "rest", "");
-                string body2 = JsonConvert.SerializeObject(comm2);
-                byte[] buffer2 = Encoding.UTF8.GetBytes(body2);
+        //        Command comm2 = new Command("Motion", "rest", "");
+        //        string body2 = JsonConvert.SerializeObject(comm2);
+        //        byte[] buffer2 = Encoding.UTF8.GetBytes(body2);
 
-                Console.WriteLine("sending command");
-                channel.BasicPublish("amq.topic", channelKey, null, buffer2);
-                Console.WriteLine("command Sent");
-                Console.ReadKey();
+        //        Console.WriteLine("sending command");
+        //        channel.BasicPublish("amq.topic", channelKey, null, buffer2);
+        //        Console.WriteLine("command Sent");
+        //        Console.ReadKey();
 
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e.ToString());
-                Console.Read();
-            }
-        }
+        //    }
+        //    catch(Exception e)
+        //    {
+        //        Console.WriteLine(e.ToString());
+        //        Console.Read();
+        //    }
+        //}
         static void testJason()
         {
             //setting up connection

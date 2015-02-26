@@ -47,22 +47,7 @@ namespace Client
         public bool IsCharging { get; set; }
     }
 
-    public class Command
-    {
-        [JsonProperty("Type")]
-        public string Type { get; set; }
-        [JsonProperty("Method")]
-        public string Method { get; set; }
-        [JsonProperty("Parameter")]
-        public object Parameter { get; set; }
-
-        public Command(string type, string method, object parameter)
-        {
-            this.Type = type;
-            this.Method = method;
-            this.Parameter = parameter;
-        }
-    }
+    
    
 
    

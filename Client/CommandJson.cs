@@ -6,10 +6,7 @@ using System.Text;
 using Newtonsoft.Json;
 namespace Client
 {
-    class CommandJson
-    {
-        
-    }
+    
     public class Command
     {
         [JsonProperty("type")]
@@ -53,5 +50,9 @@ namespace Client
         public string text { get; set; }
         [JsonProperty("language")]
         public string language { get; set; }
+
+        //AudioDeviceParameter
+        [JsonProperty("wavFile")]
+        public string wavFile { get; set; }
     }
 }

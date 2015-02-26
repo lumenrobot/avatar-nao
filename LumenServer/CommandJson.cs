@@ -55,6 +55,10 @@ namespace LumenServer
         public string text { get; set; }
         [JsonProperty("language")]
         public string language { get; set; }
+
+        //AudioDeviceParameter
+        [JsonProperty("wavFile")]
+        public string wavFile { get; set; }
     }
     
     

@@ -33,11 +33,7 @@ namespace naoTest
         
         static void Main(string[] args)
         {
-<<<<<<< HEAD
-            testAudio2();
-=======
-            tesmotion();
-            Console.Read();
+            testAudio4();
         }
         static void testSpeaker()
         {
@@ -46,7 +42,6 @@ namespace naoTest
             WaveFileReader file = new WaveFileReader(ms);
             Console.WriteLine("channel : " + file.WaveFormat.Channels);
             Console.WriteLine("channel : " + file.WaveFormat.BitsPerSample);
->>>>>>> 492287730b8bf3041b45ea7428d8020941b6ba5f
         }
         
         static void tesmotion()
@@ -70,6 +65,156 @@ namespace naoTest
             Console.WriteLine("selesai");
             Console.ReadKey();
         }
+        static void testAudio4()
+        {
+            Stream ms = new MemoryStream(File.ReadAllBytes(@"D:\wav\hasil.wav"));
+            Console.WriteLine("succesfully open file ");
+            WaveFileReader file = new WaveFileReader(ms);
+            int nbOfChannels = file.WaveFormat.Channels;
+            int sampleRate = file.WaveFormat.SampleRate;
+            Console.WriteLine("channel : " + file.WaveFormat.Channels);
+            Console.WriteLine("bitpersample : " + file.WaveFormat.BitsPerSample);
+            Console.WriteLine("sample rate : " + file.WaveFormat.SampleRate);
+            Console.WriteLine("lenght : " + file.SampleCount);
+            int outputBufferSize = 16384;
+            int numberOfOutputChannels = 2;
+
+
+            byte[] buffer = new byte[2 * (int)file.SampleCount];
+            int byteRead = file.Read(buffer, 0, 2 * (int)file.SampleCount);
+            int nbOfFrames = byteRead / 2;
+            Console.WriteLine("byte Read : " + byteRead);
+            Console.WriteLine("frame Read : " + nbOfFrames);
+
+            short[] fInputAudioData = new short[(int)file.SampleCount];
+            short[] fStereoAudioData = new short[2* (int)file.SampleCount];
+            int sample = 0;
+            for (int index = 0; index < nbOfFrames; index++)
+            {
+                fInputAudioData[index] = BitConverter.ToInt16(buffer, sample);
+                sample += 2;
+            }
+            if (nbOfChannels == 1)
+            {
+                int i = 0;
+                for (int j = 0; j < nbOfFrames; j++)
+                {
+                    fStereoAudioData[i] = fInputAudioData[j];
+                    fStereoAudioData[i + 1] = fInputAudioData[j];
+                    i += numberOfOutputChannels;
+                }
+            }
+            else if (nbOfChannels == 2)
+            {
+                for (int i = 0; i < nbOfFrames; i++)
+                {
+                    fStereoAudioData[i] = fInputAudioData[i];
+                }
+            }
+
+            ArrayList output = new ArrayList(fStereoAudioData);
+
+            try
+            {
+                AudioDeviceProxy audio = new AudioDeviceProxy(ip, port);
+                audio.setParameter("outputSampleRate", sampleRate);
+                audio.sendRemoteBufferToOutput(nbOfFrames, fStereoAudioData);
+                Console.WriteLine("finish");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("error : " + e.Message);
+            }
+
+
+            Console.ReadKey();
+        }
+        static void testAudio3()
+        {
+            Stream ms = new MemoryStream(File.ReadAllBytes(@"D:\wav\aaaa.wav"));
+            Console.WriteLine("succesfully open file ");
+            WaveFileReader file = new WaveFileReader(ms);
+            int nbOfChannels = file.WaveFormat.Channels;
+            int sampleRate = file.WaveFormat.SampleRate;
+            Console.WriteLine("channel : " + file.WaveFormat.Channels);
+            Console.WriteLine("bitpersample : " + file.WaveFormat.BitsPerSample);
+            Console.WriteLine("sample rate : " + file.WaveFormat.SampleRate);
+            Console.WriteLine("lenght : " + file.SampleCount);
+            
+            int outputBufferSize = 16384;
+            int numberOfOutputChannels = 2;
+            byte[] firstBuffer = new byte[2*file.SampleCount];
+            int byteRead = file.Read(firstBuffer, 0, 2 * (int)file.SampleCount);
+            Console.WriteLine("byteRead : " + byteRead);
+            int bufferMaxSize = 2*nbOfChannels*outputBufferSize;
+            byte[] buffer1 = new byte[bufferMaxSize];
+            byte[] buffer2 = new byte[bufferMaxSize];
+            for (int i = 0; i < bufferMaxSize; i++)
+            {
+                buffer1[i] = firstBuffer[i];
+            }
+
+            short[] fInputAudioData1 = new short[nbOfChannels * outputBufferSize];
+            short[] fStereoAudioData1 = new short[outputBufferSize * numberOfOutputChannels];
+            short[] fInputAudioData2 = new short[nbOfChannels * outputBufferSize];
+            short[] fStereoAudioData2 = new short[outputBufferSize * numberOfOutputChannels];
+            int sample = 0;
+            for (int index = 0; index < buffer1.Length/2; index++)
+            {
+                fInputAudioData1[index] = BitConverter.ToInt16(buffer1, sample);
+                sample += 2;
+            }
+            sample = 0;
+            for (int index = 0; index < buffer2.Length / 2; index++)
+            {
+                fInputAudioData2[index] = BitConverter.ToInt16(buffer2, sample);
+                sample += 2;
+            }
+            if (nbOfChannels == 1)
+            {
+                int i = 0;
+                for (int j = 0; j < buffer1.Length/2; j++)
+                {
+                    fStereoAudioData1[i] = fInputAudioData1[j];
+                    fStereoAudioData1[i + 1] = fInputAudioData1[j];
+                    i += numberOfOutputChannels;
+                }
+                i = 0;
+                for (int j = 0; j < buffer2.Length / 2; j++)
+                {
+                    fStereoAudioData2[i] = fInputAudioData2[j];
+                    fStereoAudioData2[i + 1] = fInputAudioData2[j];
+                    i += numberOfOutputChannels;
+                }
+            }
+            else if (nbOfChannels == 2)
+            {
+                for (int i = 0; i < buffer1.Length / 2; i++)
+                {
+                    fStereoAudioData1[i] = fInputAudioData1[i];
+                }
+                for (int i = 0; i < buffer2.Length / 2; i++)
+                {
+                    fStereoAudioData2[i] = fInputAudioData2[i];
+                }
+            }
+            try
+            {
+                AudioDeviceProxy audio = new AudioDeviceProxy(ip, port);
+                audio.setParameter("outputSampleRate", sampleRate);
+                audio.sendRemoteBufferToOutput(buffer2.Length/2, fStereoAudioData2);
+                Console.WriteLine("finish 1");
+                audio.sendRemoteBufferToOutput(buffer1.Length / 2, fStereoAudioData1);
+                Console.WriteLine("finish 2");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("error : " + e.Message);
+            }
+
+
+            Console.ReadKey();
+        }
         static void testAudio2()
         {
             Stream ms = new MemoryStream(File.ReadAllBytes(@"D:\wav\aaaa.wav"));
@@ -84,8 +229,9 @@ namespace naoTest
             int outputBufferSize = 16384;
             int numberOfOutputChannels = 2;
             
+
             byte[] buffer = new byte[2*nbOfChannels*outputBufferSize];
-            int byteRead = file.Read(buffer,0,2*nbOfChannels*outputBufferSize);
+            int byteRead = file.Read(buffer, 0, 2 * nbOfChannels * outputBufferSize);
             int nbOfFrames = byteRead / 2;
             Console.WriteLine("byte Read : " + byteRead);
             Console.WriteLine("frame Read : " + nbOfFrames);
