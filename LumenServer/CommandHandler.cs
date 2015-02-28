@@ -133,7 +133,7 @@ namespace LumenServer
                     motion.changeAngles(new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.angles), newCommand.parameter.speed);
                     Console.WriteLine("execution motion.changeangle() finished");
                     break;
-                case "setStiffnesses":
+                case "setstiffnesses":
                     Console.WriteLine("executing motion.setStiffnesses()");
                     motion.setStiffnesses (new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.stiffnessess));
                     Console.WriteLine("execution motion.setStiffnesses() finished");

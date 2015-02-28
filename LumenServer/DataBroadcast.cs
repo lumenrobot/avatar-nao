@@ -40,14 +40,14 @@ namespace LumenServer
             createChannel();
 
             imageThread.Start();
-            jointThread.Start();
-            sonarThread.Start();
-            tactileThread.Start();
-            batteryThread.Start(); 
-            if (connectionCheck.IsAlive == false)
-            {
-                connectionCheck.Start();
-            }
+            //jointThread.Start();
+            //sonarThread.Start();
+            //tactileThread.Start();
+            //batteryThread.Start(); 
+            //if (connectionCheck.IsAlive == false)
+            //{
+            //    connectionCheck.Start();
+            //}
 
         }
         private void checkConnection()
@@ -93,9 +93,9 @@ namespace LumenServer
                 {
                     image = new ImageObject();
 
-                    lock (Program.aquisition.image)
+                    lock (Program.image)
                     {
-                        data = Program.aquisition.image.data;
+                        data = Program.image.data;
                     }
 
                     BitmapSource imageBitmap = BitmapSource.Create(
@@ -126,6 +126,7 @@ namespace LumenServer
                         Console.WriteLine("broadcasting image data...");
                         flag = true;
                     }
+                    Console.WriteLine("broadcasting image : " + i.ToString());
                 }
                 catch(Exception)
                 {
@@ -142,11 +143,11 @@ namespace LumenServer
                 try
                 {
                     joint = new JointData();
-                    lock (Program.aquisition.joint)
+                    lock (Program.joint)
                     {
-                        joint.Names = Program.aquisition.joint.names;
-                        joint.Angles = Program.aquisition.joint.angles;
-                        joint.Stiffnesses = Program.aquisition.joint.stiffnesses;
+                        joint.Names = Program.joint.names;
+                        joint.Angles = Program.joint.angles;
+                        joint.Stiffnesses = Program.joint.stiffnesses;
                     }
                     string body = JsonConvert.SerializeObject(joint);
                     byte[] buffer = Encoding.UTF8.GetBytes(body);
