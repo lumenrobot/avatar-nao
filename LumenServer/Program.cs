@@ -112,7 +112,7 @@ namespace LumenServer
                         Thread.Sleep(10000);
                     }
                 }
-<<<<<<< HEAD
+
                 //Console.Write("Please enter NAO IP address : ");
                 //naoIP = Console.ReadLine();
                 //if (naoIP == "localhost")
@@ -122,11 +122,11 @@ namespace LumenServer
                 //Console.WriteLine("Connecting to NAO...");
                 //MotionProxy motion = new MotionProxy(naoIP, naoPort);
                 //RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
-=======
+
                 Console.WriteLine("Connecting to NAO...");
                 MotionProxy motion = new MotionProxy(naoIP, naoPort);
                 RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
->>>>>>> 2fafac553c90b53adfea0d6156355cb1760fc8ce
+
                 TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort);
                 //motion.wakeUp();
                 //posture.goToPosture("Stand", 0.9f);

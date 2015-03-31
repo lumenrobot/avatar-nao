@@ -106,11 +106,9 @@ namespace LumenServer
                     
                     image = new ImageObject();//we create new JSON object
 
-<<<<<<< HEAD
-                    lock (Program.aquisition.image) //locking data for multithreading synchronization
-=======
+
+                   
                     lock (Program.image)
->>>>>>> 2fafac553c90b53adfea0d6156355cb1760fc8ce
                     {
                         data = Program.image.data;
                     }
