@@ -106,9 +106,13 @@ namespace LumenServer
                     
                     image = new ImageObject();//we create new JSON object
 
+<<<<<<< HEAD
                     lock (Program.aquisition.image) //locking data for multithreading synchronization
+=======
+                    lock (Program.image)
+>>>>>>> 2fafac553c90b53adfea0d6156355cb1760fc8ce
                     {
-                        data = Program.aquisition.image.data;
+                        data = Program.image.data;
                     }
                     //this code below is to encode byte of image data to stringBase64
                     //this encoding process is to encode the image file into more reliable format to send through network
@@ -142,6 +146,7 @@ namespace LumenServer
                         Console.WriteLine("broadcasting image data...");//inform user that image broadcasting is running
                         flag = true;
                     }
+                    Console.WriteLine("broadcasting image : " + i.ToString());
                 }
                 catch(Exception)
                 {
@@ -158,11 +163,11 @@ namespace LumenServer
                 try
                 {
                     joint = new JointData();
-                    lock (Program.aquisition.joint)
+                    lock (Program.joint)
                     {
-                        joint.Names = Program.aquisition.joint.names;
-                        joint.Angles = Program.aquisition.joint.angles;
-                        joint.Stiffnesses = Program.aquisition.joint.stiffnesses;
+                        joint.Names = Program.joint.names;
+                        joint.Angles = Program.joint.angles;
+                        joint.Stiffnesses = Program.joint.stiffnesses;
                     }
                     string body = JsonConvert.SerializeObject(joint);
                     byte[] buffer = Encoding.UTF8.GetBytes(body);

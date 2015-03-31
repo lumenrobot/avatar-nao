@@ -36,6 +36,8 @@ namespace LumenServer
         //create rabbitMQ connection for global use
         public static ConnectionFactory factory;
         public static IConnection connection;
+        public static NaoImage image = new NaoImage();
+        public static NaoJoint joint = new NaoJoint();
         //[STAThread]//**run this code to activate GUI**//
         static void Main(string[] args)
         {
@@ -110,6 +112,7 @@ namespace LumenServer
                         Thread.Sleep(10000);
                     }
                 }
+<<<<<<< HEAD
                 //Console.Write("Please enter NAO IP address : ");
                 //naoIP = Console.ReadLine();
                 //if (naoIP == "localhost")
@@ -119,12 +122,20 @@ namespace LumenServer
                 //Console.WriteLine("Connecting to NAO...");
                 //MotionProxy motion = new MotionProxy(naoIP, naoPort);
                 //RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
+=======
+                Console.WriteLine("Connecting to NAO...");
+                MotionProxy motion = new MotionProxy(naoIP, naoPort);
+                RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
+>>>>>>> 2fafac553c90b53adfea0d6156355cb1760fc8ce
                 TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort);
                 //motion.wakeUp();
-                //posture.goToPosture("Stand", 0.8f);
-                //posture.goToPosture("Crouch", 0.8f);
-                tts.say("I am connected to nao Server");
+                //posture.goToPosture("Stand", 0.9f);
+                //posture.goToPosture("Crouch", 0.9f);
+                //tts.say("I am connected to nao Server");
                 //motion.rest();
+                motion.Dispose();
+                posture.Dispose();
+                tts.Dispose();
             }
             catch
             {
@@ -138,7 +149,7 @@ namespace LumenServer
         private static void connectToRabbitMQ()
         {
             factory = new ConnectionFactory();
-            factory.Uri = "amqp://guest:guest@localhost/%2F";
+            factory.Uri = "amqp://lumen:lumen@167.205.56.130/%2F";
             connection = factory.CreateConnection();
         }
         private static void delay(int time)

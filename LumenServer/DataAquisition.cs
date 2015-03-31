@@ -17,8 +17,8 @@ namespace LumenServer
 
     class DataAquisition
     {
-        public NaoImage image = new NaoImage();
-        public NaoJoint joint = new NaoJoint();
+        
+        
         public NaoBattery battery = new NaoBattery();
         public NaoSonar sonar= new NaoSonar() ;
         public NaoTactile tactile = new NaoTactile();
@@ -82,9 +82,9 @@ namespace LumenServer
             List<string> jointNames = new List<string>() { "HeadYaw", "HeadPitch", "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw", "LHand", "LHipYawPitch", "LHipRoll", "LHipPitch ", "LKneePitch", "LAngklePitch", "LAngkleRoll", "RHipYawPitch", "RHipRoll", "RHipPitch", "RKneePitch", "RAngklePitch", "RAngkleRoll", "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw", "RHand" };
             List<float> jointAngles = new List<float>();
             List<float> jointStiffnesses = new List<float>();
-            lock (this.joint)
+            lock (Program.joint)
             {
-                this.joint.names = jointNames;
+                Program.joint.names = jointNames;
             }
             bool flag = false;
             tryAgain:
@@ -94,10 +94,10 @@ namespace LumenServer
                 {
                     jointAngles = motion.getAngles("Body", false);
                     jointStiffnesses = motion.getStiffnesses("Body");
-                    lock (this.joint)
+                    lock (Program.joint)
                     {
-                        this.joint.angles = jointAngles;
-                        this.joint.stiffnesses = jointStiffnesses;
+                        Program.joint.angles = jointAngles;
+                        Program.joint.stiffnesses = jointStiffnesses;
                     }
                     if (!flag)
                     {
@@ -147,9 +147,9 @@ namespace LumenServer
                 {
                     rawImage = (ArrayList)video.getImageRemote(id);
                     ImageData = (byte[])rawImage[6];
-                    lock (this.image)
+                    lock (Program.image)
                     {
-                        this.image.data = ImageData;
+                        Program.image.data = ImageData;
                     }
                     //Console.WriteLine("start encoding image");
                     //BitmapSource image1 = BitmapSource.Create(
