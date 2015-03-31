@@ -123,10 +123,16 @@ namespace LumenServer
                 //MotionProxy motion = new MotionProxy(naoIP, naoPort);
                 //RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
 
+
+                /*
+
                 Console.WriteLine("Connecting to NAO...");
+                Console.WriteLine("Getting Motion proxy...");
                 MotionProxy motion = new MotionProxy(naoIP, naoPort);
+                Console.WriteLine("Getting Robot Posture proxy...");
                 RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
 
+                Console.WriteLine("Getting Text-to-Speech proxy...");
                 TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort);
                 //motion.wakeUp();
                 //posture.goToPosture("Stand", 0.9f);
@@ -136,6 +142,7 @@ namespace LumenServer
                 motion.Dispose();
                 posture.Dispose();
                 tts.Dispose();
+                 */
             }
             catch
             {
@@ -143,13 +150,15 @@ namespace LumenServer
                 Console.WriteLine("unable to connect to NAO");
                 goto tryConnect;
             }
-            Console.WriteLine("Initializing NAO Server...");
-            Console.WriteLine("NAO Server is ready!");
+            //Console.WriteLine("Initializing NAO Server...");
+            //Console.WriteLine("NAO Server is ready!");
         }
+
         private static void connectToRabbitMQ()
         {
             factory = new ConnectionFactory();
-            factory.Uri = "amqp://lumen:lumen@167.205.56.130/%2F";
+            //factory.Uri = "amqp://lumen:lumen@167.205.56.130/%2F";
+            factory.Uri = "amqp://guest:guest@127.0.0.1/%2F";
             connection = factory.CreateConnection();
         }
         private static void delay(int time)
@@ -157,7 +166,8 @@ namespace LumenServer
             Stopwatch s = new Stopwatch();
             s.Reset();
             s.Start();
-            while (s.ElapsedMilliseconds < time) { }
+            //don't do this... while (s.ElapsedMilliseconds < time) { }
+            Thread.Sleep(time);
             s.Stop();
         }
     }

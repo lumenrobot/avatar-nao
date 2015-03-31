@@ -38,7 +38,7 @@
       <HintPath>..\LumenAPI\bin\Debug\LumenAPI.dll</HintPath>
     </Reference>
     <Reference Include="naoqi-dotnet4">
-      <HintPath>..\..\..\..\Development Kit\C#\naoqi-dotnet4.dll</HintPath>
+      <HintPath>..\nao\naoqi-dotnet4.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
