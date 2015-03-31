@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 
+//this file contain JSON defenition of NAO data
 namespace LumenServer
 {
     

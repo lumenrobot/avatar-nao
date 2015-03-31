@@ -22,18 +22,28 @@ namespace naoTest
         public int y;
     }
     
+
     class Program
     {
         static Stopwatch s = new Stopwatch();
-        static string ip = "169.254.108.110";
+        static string ip = "167.205.56.142";
         //static string ip = "127.0.0.1";
         static int port = 9559;
 
         public static List<point> a = new List<point>();
         
+
+
         static void Main(string[] args)
         {
             testAudio4();
+        }
+
+        static void testSourceLocalization()
+        {
+            AudioSourceLocalizationProxy source = new AudioSourceLocalizationProxy(ip, port);
+            MemoryProxy m = new MemoryProxy(ip, port);
+            
         }
         static void testSpeaker()
         {
@@ -67,7 +77,7 @@ namespace naoTest
         }
         static void testAudio4()
         {
-            Stream ms = new MemoryStream(File.ReadAllBytes(@"D:\wav\hasil.wav"));
+            Stream ms = new MemoryStream(File.ReadAllBytes(@"D:\wav\aaaa.wav"));
             Console.WriteLine("succesfully open file ");
             WaveFileReader file = new WaveFileReader(ms);
             int nbOfChannels = file.WaveFormat.Channels;
@@ -113,7 +123,6 @@ namespace naoTest
             }
 
             ArrayList output = new ArrayList(fStereoAudioData);
-
             try
             {
                 AudioDeviceProxy audio = new AudioDeviceProxy(ip, port);

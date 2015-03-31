@@ -18,20 +18,27 @@ using RabbitMQ.Client.MessagePatterns;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Content;
 using Newtonsoft.Json;
+
+//this class will handle data broadcasting to RabbitMQ server
 namespace LumenServer
 {
     class DataBroadcast
     {
+        //initialize all channel,routing, and thread key for each type of Data
         private IModel imageChannel, jointChannel, sonarChannel, tactileChannel, batteryChannel;
         private string imageKey, jointKey, sonarKey, tactileKey, batteryKey;
         private Thread imageThread, jointThread, sonarThread, tactileThread, batteryThread;
         public Thread connectionCheck;
         public DataBroadcast()
         {
-            connectionCheck = new Thread(checkConnection);
+            //connectionCheck = new Thread(checkConnection);
         }
+
+        //this method is to start broadcasting all data to rabbitMQ server
+        //this method must be executed after startAquistion in DataAquisiton Class
         public void startBroadcasting()
         {
+            //each data broadcasting will be handle by separated thread 
             imageThread = new Thread(broadcastImage);
             jointThread = new Thread(broadcastJoint);
             sonarThread = new Thread(broadcastSonar);
@@ -39,17 +46,20 @@ namespace LumenServer
             batteryThread = new Thread(broadcastBattery);
             createChannel();
 
+            //start all thread
             imageThread.Start();
-            jointThread.Start();
-            sonarThread.Start();
-            tactileThread.Start();
-            batteryThread.Start(); 
-            if (connectionCheck.IsAlive == false)
-            {
-                connectionCheck.Start();
-            }
+            //jointThread.Start();
+            //sonarThread.Start();
+            //tactileThread.Start();
+            //batteryThread.Start(); 
+            //if (connectionCheck.IsAlive == false)
+            //{
+            //    connectionCheck.Start();
+            //}
 
         }
+        //this method is to check whether NAO is still connected or not
+        //not finished yet
         private void checkConnection()
         {
             while (true)
@@ -66,7 +76,8 @@ namespace LumenServer
                 }
             }
         }
-        public void createChannel()
+        //this method is to create channel and routing key for each data 
+        private void createChannel()
         {
             imageChannel = Program.connection.CreateModel();
             tactileChannel = Program.connection.CreateModel();
@@ -81,6 +92,7 @@ namespace LumenServer
             batteryKey = "avatar.NAO.data.battery";
 
         }
+        //this method will broadcast image data to rabbitMQ server
         public void broadcastImage()
         {
             bool flag = false;
@@ -91,13 +103,15 @@ namespace LumenServer
             {
                 try
                 {
-                    image = new ImageObject();
+                    
+                    image = new ImageObject();//we create new JSON object
 
-                    lock (Program.aquisition.image)
+                    lock (Program.aquisition.image) //locking data for multithreading synchronization
                     {
                         data = Program.aquisition.image.data;
                     }
-
+                    //this code below is to encode byte of image data to stringBase64
+                    //this encoding process is to encode the image file into more reliable format to send through network
                     BitmapSource imageBitmap = BitmapSource.Create(
                                                 320,
                                                 240,
@@ -113,17 +127,19 @@ namespace LumenServer
                     encoder.Save(ms);
                     Bitmap imageFinal = new Bitmap(ms);
                     string url = "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+
+                    //set image parameter
                     image.ContentSize = url.Length;
                     image.ContentUrl = url;
-                    image.Name = i.ToString();
+                    image.Name = i.ToString(); //name the image with number of image created
                     i++;
-                    string body = JsonConvert.SerializeObject(image);
-                    byte[] buffer = Encoding.UTF8.GetBytes(body);
-                    IBasicProperties property = imageChannel.CreateBasicProperties();
-                    imageChannel.BasicPublish("amq.topic", imageKey, null, buffer);
+                    string body = JsonConvert.SerializeObject(image); //convert image into string 
+                    byte[] buffer = Encoding.UTF8.GetBytes(body);//encoding the string into byte using UTF8 encoding
+                    
+                    imageChannel.BasicPublish("amq.topic", imageKey, null, buffer);//send the image data to rabbitMQ
                     if (!flag)
                     {
-                        Console.WriteLine("broadcasting image data...");
+                        Console.WriteLine("broadcasting image data...");//inform user that image broadcasting is running
                         flag = true;
                     }
                 }

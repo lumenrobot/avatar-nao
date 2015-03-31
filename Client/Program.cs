@@ -30,7 +30,7 @@ namespace Client
             string channelKey = "avatar.NAO.command";
             IConnection conn = factory.CreateConnection();
             channel = conn.CreateModel();
-            byte[] byteWav = File.ReadAllBytes(@"D:\wav\aaaa.wav");
+            byte[] byteWav = File.ReadAllBytes(@"D:\cobalagi.wav");
             string stringWav = Convert.ToBase64String(byteWav);
             Parameter par = new Parameter { wavFile = stringWav };
             Command com = new Command { type = "audiodevice", method = "sendremotebuffertooutput", parameter = par };

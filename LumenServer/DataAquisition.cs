@@ -40,11 +40,11 @@ namespace LumenServer
             tactileThread = new Thread(getTactileData);
             
 
-            jointThread.Start();
+            //jointThread.Start();
             imageThread.Start();
-            batteryThread.Start();
-            sonarThread.Start();
-            tactileThread.Start();
+            //batteryThread.Start();
+            //sonarThread.Start();
+            //tactileThread.Start();
             imageReady = true;
             jointReady = true;
             batteryReady = true;
