@@ -48,30 +48,32 @@ namespace naoCamera
         }
         private void getImage()
         {
-            string ip = "167.205.56.179";
+            string ip = "167.205.66.212";
             int port = 9559;
 
+            Console.WriteLine("Connecting VideoDeviceProxy {0}:{1} ...", ip, port);
             VideoDeviceProxy video = new VideoDeviceProxy(ip, port);
+            Console.WriteLine("Connected to VideoDeviceProxy {0}:{1}", ip, port);
             string id = "camera";
             int res = 1;
             int colorSpace = 11;
             int fps = 15;
             ArrayList data = new ArrayList();
             byte[] imageData;
-            bool flag;
+            bool flag = false;
             int width = 320;
             int heigth = 240;
             try
             {
+                Console.WriteLine("Subscribing id={0} res={1} colorSpace={2} fps={3} ...", id, res, colorSpace, fps);
                 video.subscribe(id, res, colorSpace, fps);
+                Console.WriteLine("Subscribed id={0} res={1} colorSpace={2} fps={3} ...", id, res, colorSpace, fps);
                 flag = true;
             }
-            catch
+            catch (Exception e)
             {
                 video.unsubscribe(id);
-                video.subscribe(id, res, colorSpace, fps);
-                MessageBox.Show("error while subscribe");
-                flag = true;
+                MessageBox.Show("error while subscribe: " + e);
             }
             if (flag)
             {
@@ -85,8 +87,10 @@ namespace naoCamera
                     {
                         s.Reset();
                         s.Start();
-                        
+
+                        Console.WriteLine("Get image remote {0} ...", (object) id);
                         data = (ArrayList)video.getImageRemote(id);
+                        Console.WriteLine("Got image remote {0}: {1} bytes", id, data.Count);
                         s.Stop();
                         Console.WriteLine("time : " + s.ElapsedMilliseconds.ToString());
                         imageData = (byte[])data[6];

@@ -26,6 +26,8 @@ namespace LumenServer
         private string imageKey, jointKey, sonarKey, tactileKey, batteryKey;
         private Thread imageThread, jointThread, sonarThread, tactileThread, batteryThread;
         public Thread connectionCheck;
+        public volatile bool imageRunning = true;
+
         public DataBroadcast()
         {
             connectionCheck = new Thread(checkConnection);
@@ -87,7 +89,7 @@ namespace LumenServer
             ImageObject image;
             byte[] data;
             long i=0;
-            while (true)
+            while (imageRunning)
             {
                 try
                 {
@@ -97,40 +99,52 @@ namespace LumenServer
                     {
                         data = Program.image.data;
                     }
+                    //Console.WriteLine("data : {0}", data.Length);
 
-                    BitmapSource imageBitmap = BitmapSource.Create(
-                                                320,
-                                                240,
-                                                96,
-                                                96,
-                                                PixelFormats.Rgb24,
-                                                BitmapPalettes.WebPalette,
-                                                data,
-                                                320 * 3);
-                    JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(imageBitmap));
-                    MemoryStream ms = new MemoryStream();
-                    encoder.Save(ms);
-                    Bitmap imageFinal = new Bitmap(ms);
-                    string url = "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
-                    image.ContentSize = url.Length;
-                    image.ContentUrl = url;
-                    image.Name = i.ToString();
-                    i++;
-                    string body = JsonConvert.SerializeObject(image);
-                    byte[] buffer = Encoding.UTF8.GetBytes(body);
-                    IBasicProperties property = imageChannel.CreateBasicProperties();
-                    imageChannel.BasicPublish("amq.topic", imageKey, null, buffer);
-                    if (!flag)
+                    if (data != null)
                     {
-                        Console.WriteLine("broadcasting image data...");
-                        flag = true;
+                        BitmapSource imageBitmap = BitmapSource.Create(
+                                                    320,
+                                                    240,
+                                                    96,
+                                                    96,
+                                                    PixelFormats.Rgb24,
+                                                    BitmapPalettes.WebPalette,
+                                                    data,
+                                                    320 * 3);
+                        JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(imageBitmap));
+                        MemoryStream ms = new MemoryStream();
+                        encoder.Save(ms);
+                        Bitmap imageFinal = new Bitmap(ms);
+                        string url = "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+                        image.ContentSize = url.Length;
+                        image.ContentUrl = url;
+                        image.Name = i.ToString();
+                        i++;
+                        string body = JsonConvert.SerializeObject(image);
+                        byte[] buffer = Encoding.UTF8.GetBytes(body);
+                        IBasicProperties property = imageChannel.CreateBasicProperties();
+                        imageChannel.BasicPublish("amq.topic", imageKey, null, buffer);
+                        if (!flag)
+                        {
+                            Console.WriteLine("broadcasting image data...");
+                            flag = true;
+                        }
+                        Console.WriteLine("broadcasting image : {0}", (object)i);
                     }
-                    Console.WriteLine("broadcasting image : " + i.ToString());
+                    else
+                    {
+                        Console.WriteLine("no image data");
+                    }
                 }
-                catch(Exception)
+                catch(Exception e)
                 {
+                    Console.WriteLine("Image broadcast error, stopping! {0}", (object)e);
+                    break;
                 }
+                Thread.Sleep(67); // ~15 fps
+                //Thread.Sleep(33); // ~30 fps
             }
         }
         public void broadcastJoint()

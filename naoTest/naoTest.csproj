@@ -38,13 +38,13 @@
       <HintPath>..\..\..\..\Development Kit\C#\Microsoft.Xna.Framework.dll</HintPath>
     </Reference>
     <Reference Include="naoqi-dotnet4">
-      <HintPath>..\..\..\..\Development Kit\C#\naoqi-dotnet4.dll</HintPath>
+      <HintPath>..\nao\naoqi-dotnet4.dll</HintPath>
     </Reference>
     <Reference Include="NAudio">
-      <HintPath>..\..\..\..\..\..\Downloads\Compressed\NAudio-1-7-2-Release\NAudio.dll</HintPath>
+      <HintPath>..\assemblies\NAudio.dll</HintPath>
     </Reference>
     <Reference Include="NAudio.WindowsMediaFormat">
-      <HintPath>..\..\..\..\..\..\Downloads\Compressed\NAudio-1-7-2-Release\NAudio.WindowsMediaFormat.dll</HintPath>
+      <HintPath>..\assemblies\NAudio.WindowsMediaFormat.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />

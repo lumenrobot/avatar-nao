@@ -42,10 +42,19 @@ namespace LumenServer
 
         public void startHandling()
         {
-
+            Console.WriteLine("Getting Motion proxy...");
             motion = new MotionProxy(Program.naoIP, Program.naoPort);
+            Console.WriteLine("Getting Robot Posture proxy...");
             posture = new RobotPostureProxy(Program.naoIP, Program.naoPort);
-            tts = new TextToSpeechProxy(Program.naoIP, Program.naoPort);
+            try
+            {
+                Console.WriteLine("Getting Text-to-Speech proxy...");
+                tts = new TextToSpeechProxy(Program.naoIP, Program.naoPort);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ERROR: Cannot get Text-to-speech Proxy: " + e);
+            }
             audio = new AudioDeviceProxy(Program.naoIP, Program.naoPort);
             handler = new Thread(commandHandling);
             handler.Start();
