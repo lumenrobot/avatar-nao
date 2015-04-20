@@ -15,6 +15,8 @@ using NAudio;
 using NAudio.Wave;
 using NAudio.WindowsMediaFormat;
 using System.IO;
+using System.Diagnostics;
+using NAOserver;
 namespace LumenServer
 {
     class CommandHandler
@@ -53,7 +55,7 @@ namespace LumenServer
             }
             catch (Exception e)
             {
-                Console.WriteLine("ERROR: Cannot get Text-to-speech Proxy: " + e);
+                Console.WriteLine("ERROR: Cannot get Text-to-speech Proxy: {0}", e);
             }
             audio = new AudioDeviceProxy(Program.naoIP, Program.naoPort);
             handler = new Thread(commandHandling);
@@ -83,28 +85,59 @@ namespace LumenServer
                         string body = Encoding.UTF8.GetString(basicEvent.Body);
                         Console.WriteLine("new incoming command!");
                         JsonSerializerSettings setting = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
-                        Command command = JsonConvert.DeserializeObject<Command>(body, setting);
-                        switch (command.type.ToLower())
+                        IDictionary msg = JsonConvert.DeserializeObject<IDictionary>(body, setting);
+                        if (msg.Contains("@type"))
                         {
-                            case "motion":
-                                motionHandling(command);
-                                break;
-                            case "posture":
-                                postureHandling(command);
-                                break;
-                            case "texttospeech":
-                                ttsHandling(command);
-                                break;
-                            case "audiodevice":
-                                audioDeviceHandling(command);
-                                break;
-                            default:
-                                Console.WriteLine(command.type);
-                                break;
+                            // JSON-LD schema
+                            Debug.WriteLine("Got command {0}: {1}", msg["@type"], msg);
+                            switch (msg["@type"] as string)
+                            {
+                                case "MoveTo":
+                                    MoveTo moveTo = JsonConvert.DeserializeObject<MoveTo>(body, setting);
+                                    float x = (float) -moveTo.BackDistance;
+                                    float y = (float) -moveTo.RightDistance;
+                                    float theta = (float) (moveTo.TurnCcwDeg / 180.0 * Math.PI);
+                                    Debug.WriteLine("Moving {0} as NAO: x={1} y={2} theta={3} ...", moveTo, x, y, theta);
+                                    motion.moveTo(x, y, theta);
+                                    Debug.WriteLine("Moved");
+                                    break;
+                                case "JointInterpolateAngle":
+                                    JointInterpolateAngle jointInterpolateAngle = JsonConvert.DeserializeObject<JointInterpolateAngle>(body, setting);
+                                    float naoAngle = (float)(jointInterpolateAngle.TargetCcwDeg / 180.0 * Math.PI);
+                                    Debug.WriteLine("Joint {0} as NAO: angle={1} ...", jointInterpolateAngle, naoAngle);
+                                    motion.angleInterpolation(jointInterpolateAngle.JointId, naoAngle, (float) jointInterpolateAngle.Duration, true);
+                                    Debug.WriteLine("Joint interpolated");
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            // "legacy" schema
+                            Command command = JsonConvert.DeserializeObject<Command>(body, setting);
+                            switch (command.type.ToLower())
+                            {
+                                case "motion":
+                                    motionHandling(command);
+                                    break;
+                                case "posture":
+                                    postureHandling(command);
+                                    break;
+                                case "texttospeech":
+                                    ttsHandling(command);
+                                    break;
+                                case "audiodevice":
+                                    audioDeviceHandling(command);
+                                    break;
+                                default:
+                                    Console.WriteLine(command.type);
+                                    break;
+                            }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        Debug.WriteLine("Error: {0}", e);
+                        Console.WriteLine("Error: {0}", e);
                     }
                     finally
                     {
@@ -256,8 +289,9 @@ namespace LumenServer
                         audio.setParameter("outputSampleRate", sampleRate);
                         audio.sendRemoteBufferToOutput(nbOfFrames, fStereoAudioData);
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        Console.WriteLine("Error: {0}", e);
                     }
                     Console.WriteLine("execution audioDevice.sendRemoteBufferToOutput() finished");
                     break;
