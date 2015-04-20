@@ -88,67 +88,74 @@ namespace LumenServer
         
         private static void connectToNao()
         {
+            // NOTE Hendy to Syarif: tinggal ganti ini aja untuk switch dari autoconfig ke ngetik IP manual
+            bool autoconfiguration = false;
+
             Console.WriteLine("NAO SERVER VERSION 3.0");
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = @"C:/Python27/python.exe";
-            start.Arguments = @"""C:/Users/Ahmad Syarif/git/NaoServer/LumenServer/bin/Debug/server.py""";
-            start.UseShellExecute = false;
-            start.RedirectStandardOutput = true;
-            Process.Start(start);
-            tryConnect:
-            try
+
+            if (autoconfiguration)
             {
-                bool flag = false;
-                Console.WriteLine("Waiting for NAO");
-                while (!flag)
+                ProcessStartInfo start = new ProcessStartInfo();
+                start.FileName = @"C:/Python27/python.exe";
+                start.Arguments = @"""C:/Users/Ahmad Syarif/git/NaoServer/LumenServer/bin/Debug/server.py""";
+                start.UseShellExecute = false;
+                start.RedirectStandardOutput = true;
+                Process.Start(start);
+            tryConnect:
+                try
                 {
-                    flag = File.Exists(Environment.CurrentDirectory + "/ipaddress.txt");
-                    if (flag)
+                    bool flag = false;
+                    Console.WriteLine("Waiting for NAO");
+                    while (!flag)
                     {
-                        naoIP = File.ReadAllText(Environment.CurrentDirectory + "/ipaddress.txt");
-                        File.Delete(Environment.CurrentDirectory + "/ipaddress.txt");
-                        Console.WriteLine("NAO is Online");
-                        Console.WriteLine("configuring NAO...");
-                        Thread.Sleep(10000);
+                        flag = File.Exists(Environment.CurrentDirectory + "/ipaddress.txt");
+                        if (flag)
+                        {
+                            naoIP = File.ReadAllText(Environment.CurrentDirectory + "/ipaddress.txt");
+                            File.Delete(Environment.CurrentDirectory + "/ipaddress.txt");
+                            Console.WriteLine("NAO is Online");
+                            Console.WriteLine("configuring NAO...");
+                            Thread.Sleep(10000);
+                        }
                     }
                 }
-
-                //Console.Write("Please enter NAO IP address : ");
-                //naoIP = Console.ReadLine();
-                //if (naoIP == "localhost")
-                //{
-                //    naoIP = "127.0.0.1";
-                //}
-                //Console.WriteLine("Connecting to NAO...");
-                //MotionProxy motion = new MotionProxy(naoIP, naoPort);
-                //RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
-
-
-                /*
-
-                Console.WriteLine("Connecting to NAO...");
-                Console.WriteLine("Getting Motion proxy...");
-                MotionProxy motion = new MotionProxy(naoIP, naoPort);
-                Console.WriteLine("Getting Robot Posture proxy...");
-                RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
-
-                Console.WriteLine("Getting Text-to-Speech proxy...");
-                TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort);
-                //motion.wakeUp();
-                //posture.goToPosture("Stand", 0.9f);
-                //posture.goToPosture("Crouch", 0.9f);
-                //tts.say("I am connected to nao Server");
-                //motion.rest();
-                motion.Dispose();
-                posture.Dispose();
-                tts.Dispose();
-                 */
+                catch
+                {
+                    //if can't connect to NAO, program will ask user to enter IP address again
+                    Console.WriteLine("unable to connect to NAO");
+                    goto tryConnect;
+                }
             }
-            catch
+            else
             {
-                //if can't connect to NAO, program will ask user to enter IP address again
-                Console.WriteLine("unable to connect to NAO");
-                goto tryConnect;
+            tryConnect:
+                try
+                {
+                    Console.Write("Please enter NAO IP address : ");
+                    naoIP = Console.ReadLine();
+                    if (naoIP == "localhost")
+                    {
+                        naoIP = "127.0.0.1";
+                    }
+                    Console.WriteLine("Connecting to NAO...");
+                    //using (MotionProxy motion = new MotionProxy(naoIP, naoPort)) {}
+                    //using (RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort)) {}
+                    using (TextToSpeechProxy tts = new TextToSpeechProxy(naoIP, naoPort))
+                    {
+                        tts.say("I am connected to nao Server");
+                    }
+                    //motion.wakeUp();
+                    //posture.goToPosture("Stand", 0.9f);
+                    //posture.goToPosture("Crouch", 0.9f);
+                    //tts.say("I am connected to nao Server");
+                    //motion.rest();
+                }
+                catch
+                {
+                    //if can't connect to NAO, program will ask user to enter IP address again
+                    Console.WriteLine("unable to connect to NAO");
+                    goto tryConnect;
+                }
             }
             //Console.WriteLine("Initializing NAO Server...");
             //Console.WriteLine("NAO Server is ready!");
