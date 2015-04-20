@@ -288,6 +288,7 @@ namespace LumenServer
                     {
                         audio.setParameter("outputSampleRate", sampleRate);
                         audio.sendRemoteBufferToOutput(nbOfFrames, fStereoAudioData);
+                        audio.setParameter("outputSampleRate",22050);
                     }
                     catch (Exception e)
                     {

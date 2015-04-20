@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 
+//this file content all JSON defenition of all Data from NAO
 namespace Client
 {
-    class DataJson
-    {
-    }
     class sound
     {
         [JsonProperty("name")]

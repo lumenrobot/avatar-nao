@@ -18,6 +18,8 @@ using RabbitMQ.Client.MessagePatterns;
 using RabbitMQ.Client.Events;
 using Newtonsoft.Json;
 
+
+//this file contains defenition of NAO data.
 namespace LumenServer
 {
     public class NaoImage
