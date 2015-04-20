@@ -1,8 +1,10 @@
 package id.ac.itb.lumen.avatar.nao;
 
+import com.aldebaran.qimessaging.helpers.al.ALMotion;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.ooxi.jdatauri.DataUri;
 import com.rabbitmq.client.ConnectionFactory;
-import id.ac.itb.lumen.core.ImageObject;
+import id.ac.itb.lumen.core.*;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -33,6 +35,8 @@ public class LumenRouteConfig {
     private Environment env;
     @Inject
     private ToJson toJson;
+    @Inject
+    private ALMotion motion;
 
     @Bean
     public ConnectionFactory amqpConnFactory() {
@@ -50,17 +54,41 @@ public class LumenRouteConfig {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.NAO.data.image")
+                from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.NAO.command")
                     .to("log:IN.avatar.NAO.data.image?showHeaders=true&showAll=true&multiline=true")
                     .process(new Processor() {
                         @Override
                         public void process(Exchange exchange) throws Exception {
-//                            final ImageObject imageObject = toJson.getMapper().readValue(
-//                                    (byte[]) exchange.getIn().getBody(), ImageObject.class);
-//                            log.info("Object yang kita dapatkan: {}", imageObject);
-//                            final DataUri dataUri = DataUri.parse(imageObject.getContentUrl(), StandardCharsets.UTF_8);
-//                            final Mat ocvImg = Highgui.imdecode(new MatOfByte(dataUri.getData()), Highgui.IMREAD_UNCHANGED);
-//                            log.info("OpenCV Mat: rows={} cols={}", ocvImg.rows(), ocvImg.cols());
+                            final LumenThing thing;
+                            // "legacy" messages support
+                            final JsonNode jsonNode = toJson.getMapper().readTree((byte[]) exchange.getIn().getBody());
+                            if ("motion".equals(jsonNode.path("type").textValue()) && "wakeUp".equals(jsonNode.path("method").textValue())) {
+                                thing = new WakeUp();
+                            } else if ("motion".equals(jsonNode.path("type").textValue()) && "rest".equals(jsonNode.path("method").textValue())) {
+                                thing = new Rest();
+                            } else {
+                                thing = toJson.getMapper().readValue(
+                                        (byte[]) exchange.getIn().getBody(), LumenThing.class);
+                            }
+                            log.info("Got avatar command: {}", thing);
+                            if (thing instanceof WakeUp) {
+                                log.info("Waking up...");
+                                motion.wakeUp();
+                                log.info("Woke up");
+                            } else if (thing instanceof Rest) {
+                                log.info("Resting...");
+                                motion.rest();
+                                log.info("Rested");
+                            } else if (thing instanceof MoveTo) {
+                                final MoveTo moveTo = (MoveTo) thing;
+                                final float naoMoveToX = (float) (-moveTo.getBackDistance());
+                                final float naoMoveToY = (float) -moveTo.getRightDistance();
+                                final float naoMoveToTheta = (float) Math.toRadians(moveTo.getTurnCcwDeg());
+                                log.info("Moving {} as NAO: x={} y={} theta={} ...",
+                                        moveTo, naoMoveToX, naoMoveToY, naoMoveToTheta);
+                                motion.moveTo(naoMoveToX, naoMoveToY, naoMoveToTheta);
+                                log.info("Moved");
+                            }
                         }
                     });
             }
