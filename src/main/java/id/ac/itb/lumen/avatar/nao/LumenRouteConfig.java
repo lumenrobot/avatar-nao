@@ -1,12 +1,12 @@
 package id.ac.itb.lumen.avatar.nao;
 
+import com.aldebaran.proxy.ALAudioDeviceProxy;
 import com.aldebaran.proxy.ALMotionProxy;
+import com.aldebaran.proxy.ALTextToSpeechProxy;
+import com.aldebaran.proxy.Variant;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.rabbitmq.client.ConnectionFactory;
-import id.ac.itb.lumen.core.LumenThing;
-import id.ac.itb.lumen.core.MoveTo;
-import id.ac.itb.lumen.core.Rest;
-import id.ac.itb.lumen.core.WakeUp;
+import id.ac.itb.lumen.core.*;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -37,6 +37,10 @@ public class LumenRouteConfig {
     private ToJson toJson;
     @Inject
     private ALMotionProxy motion;
+    @Inject
+    private ALTextToSpeechProxy tts;
+    @Inject
+    private ALAudioDeviceProxy audioDevice;
 
     @Bean
     public ConnectionFactory amqpConnFactory() {
@@ -62,16 +66,27 @@ public class LumenRouteConfig {
                             final LumenThing thing;
                             // "legacy" messages support
                             final JsonNode jsonNode = toJson.getMapper().readTree((byte[]) exchange.getIn().getBody());
-                            if ("motion".equals(jsonNode.path("type").textValue()) && "wakeUp".equals(jsonNode.path("method").textValue())) {
+                            if ("motion".equals(jsonNode.path("type").asText()) && "wakeUp".equals(jsonNode.path("method").asText())) {
                                 thing = new WakeUp();
-                            } else if ("motion".equals(jsonNode.path("type").textValue()) && "rest".equals(jsonNode.path("method").textValue())) {
+                            } else if ("motion".equals(jsonNode.path("type").asText()) && "rest".equals(jsonNode.path("method").asText())) {
                                 thing = new Rest();
+                            } else if ("texttospeech".equals(jsonNode.path("type").asText()) && "say".equals(jsonNode.path("method").asText())) {
+                                thing = new Speech(jsonNode.path("parameter").path("text").asText());
                             } else {
                                 thing = toJson.getMapper().readValue(
                                         (byte[]) exchange.getIn().getBody(), LumenThing.class);
                             }
                             log.info("Got avatar command: {}", thing);
-                            if (thing instanceof WakeUp) {
+                            if (thing instanceof AudioVolume) {
+                                log.info("Set volume {}", thing);
+                                final int volumePct = (int) Math.round(((AudioVolume) thing).getVolume() * 100);
+                                audioDevice.setOutputVolume(volumePct);
+                                tts.say("My volume is now " + volumePct + "%");
+                            } else if (thing instanceof Speech) {
+                                log.info("Speaking: {}", ((Speech) thing).getMarkup());
+                                tts.say(((Speech) thing).getMarkup());
+                                log.info("Spoken");
+                            } else if (thing instanceof WakeUp) {
                                 log.info("Waking up...");
                                 motion.wakeUp();
                                 log.info("Woke up");
@@ -88,6 +103,13 @@ public class LumenRouteConfig {
                                         moveTo, naoMoveToX, naoMoveToY, naoMoveToTheta);
                                 motion.moveTo(naoMoveToX, naoMoveToY, naoMoveToTheta);
                                 log.info("Moved");
+                            } else if (thing instanceof JointInterpolateAngle) {
+                                final JointInterpolateAngle jointInterpolateAngle = (JointInterpolateAngle) thing;
+                                final float naoAngle = (float) Math.toRadians(jointInterpolateAngle.getTurnCcwDeg());
+                                log.info("Interpolate {} as NAO: angle={} ...", jointInterpolateAngle, naoAngle);
+                                motion.angleInterpolation(new Variant(jointInterpolateAngle.getJointId().name()),
+                                        new Variant(naoAngle), new Variant((float) (double) jointInterpolateAngle.getDuration()), true);
+                                log.info("Interpolated.");
                             }
                         }
                     });

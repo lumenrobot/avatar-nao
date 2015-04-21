@@ -1,7 +1,10 @@
 package id.ac.itb.lumen.avatar.nao;
 
+import com.aldebaran.proxy.ALAudioDeviceProxy;
 import com.aldebaran.proxy.ALMotionProxy;
 import com.aldebaran.proxy.ALTextToSpeechProxy;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +13,7 @@ import org.springframework.core.env.Environment;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.concurrent.Executors;
 
 /**
  * Created by ceefour on 20/04/2015.
@@ -86,18 +90,42 @@ public class NaoConfig {
         return env.getProperty("nao.port", Integer.class, 9559);
     }
 
-    @Bean(destroyMethod = "exit")
-    public ALMotionProxy naoMotion() throws IOException {
-        log.info("Initializing Motion proxy at {}:{}...", getNaoHost(), getNaoPort());
-        return new ALMotionProxy(getNaoHost(), getNaoPort());
+    @Bean(destroyMethod = "shutdown")
+    public ListeningExecutorService naoExecutor() {
+        return MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
     }
 
     @Bean(destroyMethod = "exit")
-    public ALTextToSpeechProxy naoTts() {
-        log.info("Initializing TTS at {}:{}...", getNaoHost(), getNaoPort());
-        final ALTextToSpeechProxy tts = new ALTextToSpeechProxy(getNaoHost(), getNaoPort());
-        tts.say("I am connected to Lumen Avatar Nao");
-        return tts;
+    public ALMotionProxy naoMotion() throws IOException {
+        try {
+            log.info("Initializing Motion proxy at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALMotionProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO Motion at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+    @Bean(destroyMethod = "exit")
+    public ALTextToSpeechProxy naoTts() throws IOException {
+        try {
+            log.info("Initializing TTS at {}:{}...", getNaoHost(), getNaoPort());
+            final ALTextToSpeechProxy tts = new ALTextToSpeechProxy(getNaoHost(), getNaoPort());
+            tts.setVolume(1);
+            naoExecutor().submit(() -> tts.say("Us-suh-lum-moo-ah-lay-koom wa-roh-ma-tool-laah-ee wa-ba-roh-kah-tooh"));
+            return tts;
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO TextToSpeech at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+    @Bean(destroyMethod = "exit")
+    public ALAudioDeviceProxy naoAudioDevice() throws IOException {
+        try {
+            log.info("Initializing AudioDevice at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALAudioDeviceProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO AudioDevice at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
     }
 
 }
