@@ -92,6 +92,12 @@ namespace LumenServer
                             Debug.WriteLine("Got command {0}: {1}", msg["@type"], msg);
                             switch (msg["@type"] as string)
                             {
+                                case "ChangePosture":
+                                    PostureChange postureChange = JsonConvert.DeserializeObject<PostureChange>(body, setting);
+                                    Debug.WriteLine("{0} ...", postureChange);
+                                    posture.goToPosture(postureChange.PostureId, (float) postureChange.Speed);
+                                    Debug.WriteLine("Posture changed.");
+                                    break;
                                 case "MoveTo":
                                     MoveTo moveTo = JsonConvert.DeserializeObject<MoveTo>(body, setting);
                                     float x = (float) -moveTo.BackDistance;
@@ -215,6 +221,7 @@ namespace LumenServer
         {
             switch (newCommand.method.ToLower())
             {
+                // TODO: (from Hendy) remove this if no longer used, now replaced by PostureChange class
                 case "gotoposture":
                     Console.WriteLine("executing posture.gotoposture()");
                     posture.goToPosture(newCommand.parameter.postureName, newCommand.parameter.speed);
