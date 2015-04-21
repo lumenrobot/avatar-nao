@@ -73,6 +73,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PostureChange.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="CommandJson.cs" />
     <Compile Include="DataAquisition.cs" />
