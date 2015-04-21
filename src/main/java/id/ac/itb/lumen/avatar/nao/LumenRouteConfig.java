@@ -1,9 +1,6 @@
 package id.ac.itb.lumen.avatar.nao;
 
-import com.aldebaran.proxy.ALAudioDeviceProxy;
-import com.aldebaran.proxy.ALMotionProxy;
-import com.aldebaran.proxy.ALTextToSpeechProxy;
-import com.aldebaran.proxy.Variant;
+import com.aldebaran.proxy.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.rabbitmq.client.ConnectionFactory;
 import id.ac.itb.lumen.core.*;
@@ -41,6 +38,8 @@ public class LumenRouteConfig {
     private ALTextToSpeechProxy tts;
     @Inject
     private ALAudioDeviceProxy audioDevice;
+    @Inject
+    private ALRobotPostureProxy robotPosture;
 
     @Bean
     public ConnectionFactory amqpConnFactory() {
@@ -90,6 +89,11 @@ public class LumenRouteConfig {
                                 log.info("Waking up...");
                                 motion.wakeUp();
                                 log.info("Woke up");
+                            } else if (thing instanceof PostureChange) {
+                                log.info("Changing posture {}", thing);
+                                robotPosture.goToPosture(((PostureChange) thing).getPostureId(),
+                                        (float) (double) ((PostureChange) thing).getSpeed());
+                                log.info("Posture changed.");
                             } else if (thing instanceof Rest) {
                                 log.info("Resting...");
                                 motion.rest();
@@ -105,7 +109,7 @@ public class LumenRouteConfig {
                                 log.info("Moved");
                             } else if (thing instanceof JointInterpolateAngle) {
                                 final JointInterpolateAngle jointInterpolateAngle = (JointInterpolateAngle) thing;
-                                final float naoAngle = (float) Math.toRadians(jointInterpolateAngle.getTurnCcwDeg());
+                                final float naoAngle = (float) Math.toRadians(jointInterpolateAngle.getTargetCcwDeg());
                                 log.info("Interpolate {} as NAO: angle={} ...", jointInterpolateAngle, naoAngle);
                                 motion.angleInterpolation(new Variant(jointInterpolateAngle.getJointId().name()),
                                         new Variant(naoAngle), new Variant((float) (double) jointInterpolateAngle.getDuration()), true);

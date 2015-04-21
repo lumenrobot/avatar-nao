@@ -2,6 +2,7 @@ package id.ac.itb.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALAudioDeviceProxy;
 import com.aldebaran.proxy.ALMotionProxy;
+import com.aldebaran.proxy.ALRobotPostureProxy;
 import com.aldebaran.proxy.ALTextToSpeechProxy;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -125,6 +126,16 @@ public class NaoConfig {
             return new ALAudioDeviceProxy(getNaoHost(), getNaoPort());
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO AudioDevice at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+    @Bean(destroyMethod = "exit")
+    public ALRobotPostureProxy naoRobotPosture() throws IOException {
+        try {
+            log.info("Initializing RobotPosture at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALRobotPostureProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO RobotPosture at " + getNaoHost() + ":" + getNaoPort(), e);
         }
     }
 
