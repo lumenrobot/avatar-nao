@@ -1,10 +1,12 @@
 package id.ac.itb.lumen.avatar.nao;
 
-import com.aldebaran.qimessaging.helpers.al.ALMotion;
+import com.aldebaran.proxy.ALMotionProxy;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.ooxi.jdatauri.DataUri;
 import com.rabbitmq.client.ConnectionFactory;
-import id.ac.itb.lumen.core.*;
+import id.ac.itb.lumen.core.LumenThing;
+import id.ac.itb.lumen.core.MoveTo;
+import id.ac.itb.lumen.core.Rest;
+import id.ac.itb.lumen.core.WakeUp;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -15,8 +17,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 import javax.inject.Inject;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 /**
  * Created by ceefour on 1/19/15.
@@ -36,7 +36,7 @@ public class LumenRouteConfig {
     @Inject
     private ToJson toJson;
     @Inject
-    private ALMotion motion;
+    private ALMotionProxy motion;
 
     @Bean
     public ConnectionFactory amqpConnFactory() {

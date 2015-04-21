@@ -3,9 +3,24 @@ Avatar node implementation for NAO Robot by Aldebaran, planned successor of http
 
 ## jnaoqi
 
-On Windows, you **must** [use the 32-bit JDK on Windows 64-bit](https://github.com/aldebaran/jnaoqi/issues/1). 
+On Windows 64-bit, you **must** [use the 32-bit JDK](https://github.com/aldebaran/jnaoqi/issues/1).
+This is for both jnaoqi 1.14.x and 2.x.
+ 
+We currently use jnaoqi v1.14.5, please copy `lib_win32/jnaoqi.dll` to `C:\ProgramData\Oracle\Java\javapath`
 
-## Hendy's note: JAR files
+## Hendy's note: JAR and DLL files for jnaoqi v1.x
+
+The jnaoqi JARs and DLLs are available in [Aldebaran Community Archives](https://community.aldebaran-robotics.com/resources/archives/)
+or offline at Hendy's passport: `I:\project_passport\lumen\nao\java`
+
+To upload the jnaoqi JAR + source JAR to Soluvas Thirdparty Maven repository:
+
+```bash
+mvn deploy:deploy-file -DrepositoryId=soluvas-public-thirdparty -Durl=http://nexus.bippo.co.id/nexus/content/repositories/soluvas-public-thirdparty/ -Dfile=lib/jnaoqi-1.14.5.jar -Dpackaging=jar -DgroupId=com.aldebaran -DartifactId=jnaoqi -Dversion=1.14.5
+mvn deploy:deploy-file -DrepositoryId=soluvas-public-thirdparty -Durl=http://nexus.bippo.co.id/nexus/content/repositories/soluvas-public-thirdparty/ -Dfile=jnaoqi-1.14.5-sources.jar -Dpackaging=jar -DgroupId=com.aldebaran -DartifactId=jnaoqi -Dversion=1.14.5 -Dclassifier=sources
+```
+
+## Hendy's note: JAR files for jnaoqi v2.x
 
 jnaoqi JARs are sourced from https://github.com/aldebaran/jnaoqi
 (or, offline at `I:\project_passport\lumen\nao\java`),

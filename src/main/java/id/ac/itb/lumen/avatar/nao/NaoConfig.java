@@ -1,14 +1,7 @@
 package id.ac.itb.lumen.avatar.nao;
 
-import com.aldebaran.qimessaging.Application;
-import com.aldebaran.qimessaging.CallError;
-import com.aldebaran.qimessaging.Future;
-import com.aldebaran.qimessaging.Session;
-import com.aldebaran.qimessaging.helpers.ALInterface;
-import com.aldebaran.qimessaging.helpers.ALModule;
-import com.aldebaran.qimessaging.helpers.al.ALMotion;
-import com.aldebaran.qimessaging.helpers.al.ALTextToSpeech;
-import com.google.common.base.Throwables;
+import com.aldebaran.proxy.ALMotionProxy;
+import com.aldebaran.proxy.ALTextToSpeechProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +10,6 @@ import org.springframework.core.env.Environment;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ceefour on 20/04/2015.
@@ -31,6 +23,7 @@ public class NaoConfig {
     @Inject
     private Environment env;
 
+/* jnaoqi v2.x
     @Bean(destroyMethod = "stop")
     public Application naoqiApp() {
         final Application naoqiApp = new Application();
@@ -80,6 +73,29 @@ public class NaoConfig {
     public ALTextToSpeech naoTts() throws IOException, InterruptedException, CallError {
         log.info("Initializing TTS...");
         final ALTextToSpeech tts = new ALTextToSpeech(naoSession());
+        tts.say("I am connected to Lumen Avatar Nao");
+        return tts;
+    }
+*/
+
+    protected String getNaoHost() {
+        return env.getRequiredProperty("nao.host");
+    }
+
+    protected int getNaoPort() {
+        return env.getProperty("nao.port", Integer.class, 9559);
+    }
+
+    @Bean(destroyMethod = "exit")
+    public ALMotionProxy naoMotion() throws IOException {
+        log.info("Initializing Motion proxy at {}:{}...", getNaoHost(), getNaoPort());
+        return new ALMotionProxy(getNaoHost(), getNaoPort());
+    }
+
+    @Bean(destroyMethod = "exit")
+    public ALTextToSpeechProxy naoTts() {
+        log.info("Initializing TTS at {}:{}...", getNaoHost(), getNaoPort());
+        final ALTextToSpeechProxy tts = new ALTextToSpeechProxy(getNaoHost(), getNaoPort());
         tts.say("I am connected to Lumen Avatar Nao");
         return tts;
     }
