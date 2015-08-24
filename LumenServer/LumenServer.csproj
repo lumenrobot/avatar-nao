@@ -37,9 +37,8 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="naoqi-dotnet4, Version=1.14.1.16, Culture=neutral, PublicKeyToken=b9b4e24bd78100d6, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\nao\naoqi-dotnet4.dll</HintPath>
+    <Reference Include="naoqi-dotnet4">
+      <HintPath>.\naoqi-dotnet4.dll</HintPath>
     </Reference>
     <Reference Include="NAudio, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -60,7 +59,7 @@
       <HintPath>..\assemblies\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="Renci.SshNet">
-      <HintPath>..\Renci.SshNet.dll</HintPath>
+      <HintPath>.\Renci.SshNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
