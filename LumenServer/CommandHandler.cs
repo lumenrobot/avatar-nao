@@ -91,9 +91,6 @@ namespace LumenServer
         {
             while (true)
             {
-                
-                
-                
                 BasicDeliverEventArgs basicEvent = (BasicDeliverEventArgs)consumer.Queue.Dequeue();
 
                 var propertiesReceived = basicEvent.BasicProperties;
