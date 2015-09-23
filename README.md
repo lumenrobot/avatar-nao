@@ -3,14 +3,27 @@ Avatar node implementation for NAO Robot by Aldebaran, planned successor of http
 
 ## jnaoqi
 
+Due to **permanent** requirement of 32-bit JDK for jnaoqi, we can't use OpenCV (64-bit) and for convenience
+will just use JDK standard ImageIO.
+
+### Windows 64-bit - Requires 32-bit Oracle JDK
+
 On Windows 64-bit, you **must** [use the 32-bit JDK](https://github.com/aldebaran/jnaoqi/issues/1).
 This is for both jnaoqi 1.14.x and 2.x.
- 
+
 We currently use jnaoqi v1.14.5, please copy `lib_win32/jnaoqi.dll` to `C:\ProgramData\Oracle\Java\javapath`
+
+If you get this error:
+
+    Caused by: java.lang.UnsatisfiedLinkError: C:\ProgramData\Oracle\Java\javapath\jnaoqi.dll: Can't load IA 32-bit .dll on a AMD 64-bit platform
+    
+make sure you run `AvatarNaoApp` using 32-bit JDK.
+ 
+### Linux 64-bit - Can use 64-bit Oracle JDK
 
 ## Hendy's note: JAR and DLL files for jnaoqi v1.x
 
-The jnaoqi JARs and DLLs are available in [Aldebaran Community Archives](https://community.aldebaran-robotics.com/resources/archives/)
+The jnaoqi JARs and DLLs was available in [Aldebaran Community Archives](https://community.aldebaran-robotics.com/resources/archives/) (not anymore)
 or offline at Hendy's passport: `I:\project_passport\lumen\nao\java`
 
 To upload the jnaoqi JAR + source JAR to Soluvas Thirdparty Maven repository:

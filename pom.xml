@@ -20,7 +20,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<start-class>id.ac.itb.lumen.avatar.nao.NaoApplication</start-class>
+		<start-class>id.ac.itb.lumen.avatar.nao.AvatarNaoApp</start-class>
 		<java.version>1.8</java.version>
 	</properties>
 
