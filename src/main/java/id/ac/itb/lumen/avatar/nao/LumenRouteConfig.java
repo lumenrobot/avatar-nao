@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.ooxi.jdatauri.DataUri;
 import com.rabbitmq.client.ConnectionFactory;
 import id.ac.itb.lumen.core.*;
+import javafx.scene.paint.Color;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
@@ -54,6 +55,8 @@ public class LumenRouteConfig {
     private ALRobotPostureProxy robotPosture;
     @Inject
     private ALVideoDeviceProxy videoDevice;
+    @Inject
+    private ALLedsProxy ledsProxy;
 
     @Bean
     public ConnectionFactory amqpConnFactory() {
@@ -118,11 +121,11 @@ public class LumenRouteConfig {
             @Override
             public void configure() throws Exception {
                 from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.NAO.command")
-                    .to("log:IN.avatar.NAO.data.image?showHeaders=true&showAll=true&multiline=true")
+                    .to("log:IN.avatar.NAO.command?showHeaders=true&showAll=true&multiline=true")
                     .process(exchange -> {
                         final LumenThing thing;
                         // "legacy" messages support
-                        final JsonNode jsonNode = toJson.getMapper().readTree((byte[]) exchange.getIn().getBody());
+                        final JsonNode jsonNode = toJson.getMapper().readTree(exchange.getIn().getBody(byte[].class));
                         if ("motion".equals(jsonNode.path("type").asText()) && "wakeUp".equals(jsonNode.path("method").asText())) {
                             thing = new WakeUp();
                         } else if ("motion".equals(jsonNode.path("type").asText()) && "rest".equals(jsonNode.path("method").asText())) {
@@ -172,6 +175,45 @@ public class LumenRouteConfig {
                             motion.angleInterpolation(new Variant(jointInterpolateAngle.getJointId().name()),
                                     new Variant(naoAngle), new Variant((float) (double) jointInterpolateAngle.getDuration()), true);
                             log.info("Interpolated.");
+                        }
+                    });
+            }
+        };
+    }
+
+    @Bean
+    public RouteBuilder ledsRouteBuilder() {
+        log.info("Initializing LEDs RouteBuilder");
+        return new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.leds")
+                    .to("log:IN.avatar.nao1.leds?showHeaders=true&showAll=true&multiline=true")
+                    .process(exchange -> {
+                        final LumenThing thing;
+                        // "legacy" messages support
+                        final JsonNode jsonNode = toJson.getMapper().readTree(exchange.getIn().getBody(byte[].class));
+                        thing = toJson.getMapper().readValue(exchange.getIn().getBody(byte[].class), LumenThing.class);
+                        log.info("Got LED command: {}", thing);
+                        if (thing instanceof LedOperation) {
+                            final LedOperation ledOp = (LedOperation) thing;
+                            final String ledName = ledOp.getNames().stream().findFirst().orElse("FaceLeds");
+                            if (ledOp.getKind() == LedOperationKind.OFF) {
+                                ledsProxy.off(ledName);
+                            } else if (ledOp.getKind() == LedOperationKind.ON) {
+                                ledsProxy.on(ledName);
+                            } else if (ledOp.getKind() == LedOperationKind.FADE) {
+                                //final Color rgb = Color.web(ledOp.getColor());
+                                ledsProxy.fade(ledName, ledOp.getIntensity().floatValue(), ledOp.getDuration().floatValue());
+                            } else if (ledOp.getKind() == LedOperationKind.FADE_RGB) {
+                                final Color rgb = Color.web(ledOp.getColor());
+                                final int rgbi = ((int)(rgb.getRed() * 0xff) << 16) | ((int)(rgb.getGreen() * 0xff) << 8) | (int)(rgb.getBlue() * 0xff);
+                                ledsProxy.fadeRGB(ledName, rgbi, ledOp.getDuration().floatValue());
+                            } else if (ledOp.getKind() == LedOperationKind.RANDOM_EYES) {
+                                ledsProxy.randomEyes(ledOp.getDuration().floatValue());
+                            } else if (ledOp.getKind() == LedOperationKind.RASTA) {
+                                ledsProxy.rasta(ledOp.getDuration().floatValue());
+                            }
                         }
                     });
             }

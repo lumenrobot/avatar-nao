@@ -131,7 +131,7 @@ public class NaoConfig {
         try {
             log.info("Initializing AudioDevice at {}:{}...", getNaoHost(), getNaoPort());
             final ALAudioDeviceProxy audioDeviceProxy = new ALAudioDeviceProxy(getNaoHost(), getNaoPort());
-            final Integer volume = env.getProperty("nao.audio.volume", Integer.class, 75);
+            final Integer volume = env.getProperty("nao.audio.volume", Integer.class, 80);
             if (volume != null) {
                 log.info("Set audio output volume to {}...", volume);
                 audioDeviceProxy.setOutputVolume(volume);
@@ -159,6 +159,16 @@ public class NaoConfig {
             return new ALVideoDeviceProxy(getNaoHost(), getNaoPort());
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO VideoDevice at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+    @Bean
+    public ALLedsProxy ledsProxy() throws IOException {
+        try {
+            log.info("Initializing LEDs at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALLedsProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO LEDs at " + getNaoHost() + ":" + getNaoPort(), e);
         }
     }
 
