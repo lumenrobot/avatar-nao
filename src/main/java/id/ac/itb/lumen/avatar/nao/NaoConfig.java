@@ -101,7 +101,13 @@ public class NaoConfig {
     public ALMotionProxy naoMotion() throws IOException {
         try {
             log.info("Initializing Motion proxy at {}:{}...", getNaoHost(), getNaoPort());
-            return new ALMotionProxy(getNaoHost(), getNaoPort());
+            final ALMotionProxy motionProxy = new ALMotionProxy(getNaoHost(), getNaoPort());
+            final boolean restAtInit = env.getProperty("nao.motion.rest-at-init", Boolean.class, true);
+            if (restAtInit) {
+                log.info("Resting NAO...");
+                motionProxy.rest();
+            }
+            return motionProxy;
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO Motion at " + getNaoHost() + ":" + getNaoPort(), e);
         }
