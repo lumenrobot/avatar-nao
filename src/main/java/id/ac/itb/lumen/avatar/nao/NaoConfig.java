@@ -130,7 +130,13 @@ public class NaoConfig {
     public ALAudioDeviceProxy naoAudioDevice() throws IOException {
         try {
             log.info("Initializing AudioDevice at {}:{}...", getNaoHost(), getNaoPort());
-            return new ALAudioDeviceProxy(getNaoHost(), getNaoPort());
+            final ALAudioDeviceProxy audioDeviceProxy = new ALAudioDeviceProxy(getNaoHost(), getNaoPort());
+            final Integer volume = env.getProperty("nao.audio.volume", Integer.class, 75);
+            if (volume != null) {
+                log.info("Set audio output volume to {}...", volume);
+                audioDeviceProxy.setOutputVolume(volume);
+            }
+            return audioDeviceProxy;
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO AudioDevice at " + getNaoHost() + ":" + getNaoPort(), e);
         }
