@@ -1,4 +1,4 @@
-package id.ac.itb.lumen.avatar.nao;
+package org.lskk.lumen.avatar.nao;
 
 import org.apache.camel.spring.javaconfig.CamelConfiguration;
 import org.springframework.context.annotation.Configuration;

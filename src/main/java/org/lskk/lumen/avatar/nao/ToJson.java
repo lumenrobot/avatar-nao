@@ -1,4 +1,4 @@
-package id.ac.itb.lumen.avatar.nao;
+package org.lskk.lumen.avatar.nao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

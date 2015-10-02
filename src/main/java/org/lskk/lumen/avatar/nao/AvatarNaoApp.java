@@ -1,4 +1,4 @@
-package id.ac.itb.lumen.avatar.nao;
+package org.lskk.lumen.avatar.nao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

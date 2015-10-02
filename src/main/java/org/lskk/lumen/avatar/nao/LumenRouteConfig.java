@@ -1,18 +1,16 @@
-package id.ac.itb.lumen.avatar.nao;
+package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.ooxi.jdatauri.DataUri;
 import com.rabbitmq.client.ConnectionFactory;
 import id.ac.itb.lumen.core.*;
 import javafx.scene.paint.Color;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.HexDump;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.lskk.lumen.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +22,6 @@ import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 /**

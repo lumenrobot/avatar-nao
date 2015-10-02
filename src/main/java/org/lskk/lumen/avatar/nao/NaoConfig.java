@@ -1,4 +1,4 @@
-package id.ac.itb.lumen.avatar.nao;
+package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
 import com.google.common.util.concurrent.ListeningExecutorService;
