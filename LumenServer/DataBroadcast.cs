@@ -88,10 +88,10 @@ namespace LumenServer
             batteryChannel = Program.connection.CreateModel();
 
             imageKey = "avatar.nao1.camera.main";
-            jointKey = "avatar.NAO.data.joint";
-            sonarKey = "avatar.NAO.data.sonar";
-            tactileKey = "avatar.NAO.data.tactile";
-            batteryKey = "avatar.NAO.data.battery";
+            jointKey = "avatar.nao1.data.joint";
+            sonarKey = "avatar.nao1.data.sonar";
+            tactileKey = "avatar.nao1.data.tactile";
+            batteryKey = "avatar.nao1.data.battery";
 
         }
         //this method will broadcast image data to rabbitMQ server
