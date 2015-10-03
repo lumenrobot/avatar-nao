@@ -39,6 +39,7 @@ public class ActorRouter extends RouteBuilder {
                     log.info("Got actor command: {}", thing);
                     if (thing instanceof ActingPerformance) {
                         final ActingPerformance actingPerformance = (ActingPerformance) thing;
+                        motion.wakeUp();
                         switch (actingPerformance.getScript()) {
                             case GOOD_BYE:
                                 motion.setAngles(
@@ -158,6 +159,11 @@ public class ActorRouter extends RouteBuilder {
 
                             default:
                                 throw new UnsupportedOperationException("Unknown acting script: " + actingPerformance.getScript());
+                        }
+
+                        if (!Boolean.FALSE.equals(actingPerformance.getRestAfterPerformance())) {
+                            log.info("Resting after performance");
+                            motion.rest();
                         }
                     }
                 });
