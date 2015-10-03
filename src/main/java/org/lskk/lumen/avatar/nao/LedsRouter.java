@@ -28,7 +28,7 @@ public class LedsRouter extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.leds")
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.leds&concurrentConsumers=4")
                 .to("log:IN.avatar.nao1.leds?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing;

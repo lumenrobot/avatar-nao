@@ -40,7 +40,7 @@ public class AudioRouter extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         final String naoPassword = env.getRequiredProperty("nao.password");
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.out")
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.out&concurrentConsumers=4")
                 .to("log:IN.avatar.nao1.audio.out?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
@@ -53,6 +53,7 @@ public class AudioRouter extends RouteBuilder {
                         if ("file".equals(contentUrl.getScheme())) {
                             log.info("Playing locally: {}", contentUrl.getPath());
                             audioPlayer.playFile(contentUrl.getPath());
+                            log.info("Played locally: {}", contentUrl.getPath());
                         } else if ("data".equals(contentUrl.getScheme())) {
                             final DataUri dataUri = DataUri.parse(playAudio.getContentUrl(), StandardCharsets.UTF_8);
 //                            final File audioFile = File.createTempFile("nao_", ".mp3");
@@ -78,6 +79,7 @@ public class AudioRouter extends RouteBuilder {
                                 }
                                 log.info("Playing uploaded file locally: {}", destFile);
                                 audioPlayer.playFile(destFile);
+                                log.info("Played uploaded file locally: {}", destFile);
                             } finally {
 //                                audioFile.delete();
                             }

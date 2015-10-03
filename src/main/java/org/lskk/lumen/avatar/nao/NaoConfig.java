@@ -88,7 +88,7 @@ public class NaoConfig {
         return env.getRequiredProperty("nao.host");
     }
 
-    protected int getNaoPort() {
+    public int getNaoPort() {
         return env.getProperty("nao.port", Integer.class, 9559);
     }
 
@@ -164,59 +164,12 @@ public class NaoConfig {
     }
 
     @Bean
-    public ALVideoDeviceProxy naoVideoDevice() throws IOException {
-        try {
-            log.info("Initializing VideoDevice at {}:{}...", getNaoHost(), getNaoPort());
-            return new ALVideoDeviceProxy(getNaoHost(), getNaoPort());
-        } catch (Exception e) {
-            throw new IOException("Cannot connect NAO VideoDevice at " + getNaoHost() + ":" + getNaoPort(), e);
-        }
-    }
-
-    @Bean
     public ALLedsProxy ledsProxy() throws IOException {
         try {
             log.info("Initializing LEDs at {}:{}...", getNaoHost(), getNaoPort());
             return new ALLedsProxy(getNaoHost(), getNaoPort());
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO LEDs at " + getNaoHost() + ":" + getNaoPort(), e);
-        }
-    }
-
-    @PostConstruct
-    public void init() throws IOException {
-        //log.info("Start cleanly: Unsubscribe all instances of VideoDevice '{}' ...", GVM_ID);
-        //naoVideoDevice().unsubscribeAllInstances(GVM_ID); // start with clean state
-
-        // make sure we're connected to VideoDevice
-        naoVideoDevice();
-
-        //default is to get image with this specification
-        //resolution : 1    ;320*240
-        //colorSpace : 13   ;BufferedImage.TYPE_3BYTE_BGR
-        //frameRate  : 15   ;15 frame per second
-        final int COLORSPACE_BGR = 13;
-        log.info("Subscribing to VideoDevice '{}' ...", GVM_ID);
-        try {
-            naoVideoDevice().subscribe(GVM_ID, 1, COLORSPACE_BGR, CAMERA_FPS);
-        } catch (Exception e) {
-            log.info("Unsubscribe VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().unsubscribe(GVM_ID);
-            log.info("Re-subscribing to VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().subscribe(GVM_ID, 1, COLORSPACE_BGR, CAMERA_FPS);
-        }
-    }
-
-    @PreDestroy
-    public void destroy() throws IOException {
-        try {
-            log.info("Releasing image VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().releaseImage(GVM_ID);
-        } finally {
-            log.info("Unsubscribe VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().unsubscribe(GVM_ID);
-            log.info("Stop frame grabber...");
-            naoVideoDevice().stopFrameGrabber(0);
         }
     }
 
