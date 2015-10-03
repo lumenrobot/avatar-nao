@@ -37,12 +37,20 @@ public class AudioRouter extends RouteBuilder {
     private ToJson toJson;
 
     public static class AudioData {
-        private AudioFormat format;
-        private byte[] data;
+        private final AudioFormat format;
+        private final byte[] data;
+        private final AudioFormat sourceFormat;
 
         public AudioData(AudioFormat format, byte[] data) {
             this.format = format;
             this.data = data;
+            this.sourceFormat = null;
+        }
+
+        public AudioData(AudioFormat format, byte[] data, AudioFormat sourceFormat) {
+            this.format = format;
+            this.data = data;
+            this.sourceFormat = sourceFormat;
         }
 
         public AudioFormat getFormat() {
@@ -51,6 +59,10 @@ public class AudioRouter extends RouteBuilder {
 
         public byte[] getData() {
             return data;
+        }
+
+        public AudioFormat getSourceFormat() {
+            return sourceFormat;
         }
     }
 
@@ -76,7 +88,7 @@ public class AudioRouter extends RouteBuilder {
                     }
                     baos.write(buffer, 0, readCount);
                 }
-                return new AudioData(audioFormat, baos.toByteArray());
+                return new AudioData(audioFormat, baos.toByteArray(), sourceFormat);
             }
         }
     }
@@ -102,7 +114,7 @@ public class AudioRouter extends RouteBuilder {
                     }
                     baos.write(buffer, 0, readCount);
                 }
-                return new AudioData(convertFormat, baos.toByteArray());
+                return new AudioData(convertFormat, baos.toByteArray(), sourceFormat);
             }
         }
     }
@@ -158,14 +170,14 @@ public class AudioRouter extends RouteBuilder {
                             final AudioData naoSound = convertAudioData(dataUri.getData(), naoFormat);
                             final Variant fStereoAudioData = new Variant(naoSound.getData());
                             final int frameCount = naoSound.getData().length / naoSound.getFormat().getFrameSize();
-                            log.info("Playing converted file from {} bytes MP3 to {} bytes WAV in {} frames: {}",
+                            log.info("Playing converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
                                     dataUri.getData().length, naoSound.getData().length,
-                                    frameCount, naoSound.getFormat());
+                                    frameCount, naoSound.getSourceFormat());
 //                            audioDevice.setParameter("outputSampleRate", (int) naoSound.getFormat().getSampleRate());
                             audioDevice.sendRemoteBufferToOutput(frameCount, fStereoAudioData);
-                            log.info("Played converted file from {} bytes MP3 to {} bytes WAV in {} frames: {}",
+                            log.info("Played converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
                                     dataUri.getData().length, naoSound.getData().length,
-                                    frameCount, naoSound.getFormat());
+                                    frameCount, naoSound.getSourceFormat());
                         } else {
                             throw new NaoException("Unknown audio URL: " + contentUrl);
                         }
