@@ -87,7 +87,7 @@ namespace LumenServer
             sonarChannel = Program.connection.CreateModel();
             batteryChannel = Program.connection.CreateModel();
 
-            imageKey = "avatar.NAO.data.image";
+            imageKey = "avatar.nao1.camera.main";
             jointKey = "avatar.NAO.data.joint";
             sonarKey = "avatar.NAO.data.sonar";
             tactileKey = "avatar.NAO.data.tactile";
