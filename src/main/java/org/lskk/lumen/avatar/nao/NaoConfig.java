@@ -152,6 +152,17 @@ public class NaoConfig {
     }
 
     @Bean
+    public ALAudioRecorderProxy naoAudioRecorder() throws IOException {
+        try {
+            log.info("Initializing AudioRecorder at {}:{}...", getNaoHost(), getNaoPort());
+            final ALAudioRecorderProxy audioRecorderProxy = new ALAudioRecorderProxy(getNaoHost(), getNaoPort());
+            return audioRecorderProxy;
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO AudioRecorder at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+    @Bean
     public ALRobotPostureProxy naoRobotPosture() throws IOException {
         try {
             log.info("Initializing RobotPosture at {}:{}...", getNaoHost(), getNaoPort());

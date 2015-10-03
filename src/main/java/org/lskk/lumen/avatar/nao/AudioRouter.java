@@ -2,7 +2,19 @@ package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
 import com.github.ooxi.jdatauri.DataUri;
+import com.google.common.base.Preconditions;
+import org.apache.camel.Body;
+import org.apache.camel.Header;
+import org.apache.camel.Produce;
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.lskk.lumen.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +29,10 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 @Component
 public class AudioRouter extends RouteBuilder {
@@ -34,7 +48,18 @@ public class AudioRouter extends RouteBuilder {
     @Inject
     private ALAudioPlayerProxy audioPlayer;
     @Inject
+    private ALAudioRecorderProxy audioRecorder;
+    @Inject
     private ToJson toJson;
+    @Inject
+    private ProducerTemplate producerTemplate;
+
+//    public interface DataRecording {
+//        void sendAudio(@Body AudioObject audioObject, @Header("avatarId") String avatarId);
+//    }
+//
+//    @Produce(uri = "seda:data-recording")
+//    private DataRecording dataRecording;
 
     public static class AudioData {
         private final AudioFormat format;
@@ -125,6 +150,7 @@ public class AudioRouter extends RouteBuilder {
         // NAO only supports limited sample rates, so we limit to 22050 Hz (default)
         final int sampleRate = 22050;
         final int channelCount = 2;
+        final String naoUser = "nao";
         final AudioFormat naoFormat = new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16,
                 channelCount, channelCount * 2, sampleRate, false);
@@ -134,8 +160,8 @@ public class AudioRouter extends RouteBuilder {
                     final LumenThing thing = toJson.getMapper().readValue(
                             exchange.getIn().getBody(byte[].class), LumenThing.class);
                     log.info("Got avatar command: {}", thing);
-                    if (thing instanceof PlayAudio) {
-                        final PlayAudio playAudio = (PlayAudio) thing;
+                    if (thing instanceof AudioObject) {
+                        final AudioObject playAudio = (AudioObject) thing;
                         log.info("Play audio {}", playAudio.getContentUrl());
                         final URI contentUrl = URI.create(playAudio.getContentUrl());
                         if ("file".equals(contentUrl.getScheme())) {
@@ -146,7 +172,6 @@ public class AudioRouter extends RouteBuilder {
                             final DataUri dataUri = DataUri.parse(playAudio.getContentUrl(), StandardCharsets.UTF_8);
 
 //                            final String destFile = "/home/nao/tmp.mp3";
-//                            final String naoUser = "nao";
 //                            log.info("Uploading {} bytes to ftp://{}@{}{} ...", dataUri.getData().length, naoUser, naoConfig.getNaoHost(), destFile);
 //                            final FTPClient ftpClient = new FTPClient();
 //                            ftpClient.connect(naoConfig.getNaoHost());
@@ -184,6 +209,45 @@ public class AudioRouter extends RouteBuilder {
                     } else if (thing instanceof StopAudio) {
                         log.info("Stopping audio!");
                         audioPlayer.stopAll();
+                    } else if (thing instanceof RecordAudio) {
+                        final RecordAudio recordAudio = (RecordAudio) thing;
+                        final String remoteFile = "recordings/microphones/recording.wav";
+                        log.info("Executing audioDevice.record() to {} ...", remoteFile);
+                        audioRecorder.stopMicrophonesRecording();
+                        audioRecorder.startMicrophonesRecording(remoteFile, "wav", 16000,
+                                new Variant(new int[]{0, 0, 1, 0}));
+                        Thread.sleep(Math.round(Optional.ofNullable(recordAudio.getDuration()).orElse(5.0) * 1000));
+                        audioRecorder.stopMicrophonesRecording();
+
+                        log.debug("Downloading {} ...", remoteFile);
+                        final byte[] rawData;
+                        final FTPClient ftpClient = new FTPClient();
+                        ftpClient.connect(naoConfig.getNaoHost());
+                        try {
+                            Preconditions.checkArgument(ftpClient.login(naoUser, naoPassword),
+                                    "Cannot connect to FTP {} using user '{}'", naoConfig.getNaoHost(), naoUser);
+                            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+                            try (InputStream ftpis = ftpClient.retrieveFileStream(remoteFile)) {
+                                rawData = IOUtils.toByteArray(ftpis);
+                                log.debug("Retrieved {} bytes of recorded file", rawData.length);
+                            }
+                        } finally {
+                            ftpClient.disconnect();
+                        }
+
+                        final AudioObject audioObject = new AudioObject();
+                        audioObject.setName(FilenameUtils.getName(remoteFile));
+                        audioObject.setContentSize((long) rawData.length);
+                        audioObject.setDateCreated(new DateTime(DateTimeZone.forID("Asia/Jakarta")));
+                        audioObject.setUploadDate(audioObject.getDateCreated());
+                        audioObject.setDatePublished(audioObject.getDateCreated());
+                        audioObject.setDateModified(audioObject.getDateCreated());
+                        audioObject.setContentUrl("data:audio/x-wav;base64," +
+                                Base64.encodeBase64String(rawData));
+
+                        final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.data.recording";
+                        producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
+                        log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
                     }
                 });
     }
