@@ -84,7 +84,7 @@ public class NaoConfig {
     }
 */
 
-    protected String getNaoHost() {
+    public String getNaoHost() {
         return env.getRequiredProperty("nao.host");
     }
 
@@ -139,6 +139,17 @@ public class NaoConfig {
             return audioDeviceProxy;
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO AudioDevice at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+    @Bean
+    public ALAudioPlayerProxy naoAudioPlayer() throws IOException {
+        try {
+            log.info("Initializing AudioPlayer at {}:{}...", getNaoHost(), getNaoPort());
+            final ALAudioPlayerProxy audioPlayerProxy = new ALAudioPlayerProxy(getNaoHost(), getNaoPort());
+            return audioPlayerProxy;
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO AudioPlayer at " + getNaoHost() + ":" + getNaoPort(), e);
         }
     }
 

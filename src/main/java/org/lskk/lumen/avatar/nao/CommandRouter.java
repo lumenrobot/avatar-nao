@@ -45,7 +45,7 @@ public class CommandRouter extends RouteBuilder {
                         thing = new Speech(jsonNode.path("parameter").path("text").asText());
                     } else {
                         thing = toJson.getMapper().readValue(
-                                (byte[]) exchange.getIn().getBody(), LumenThing.class);
+                                exchange.getIn().getBody(byte[].class), LumenThing.class);
                     }
                     log.info("Got avatar command: {}", thing);
                     if (thing instanceof AudioVolume) {
