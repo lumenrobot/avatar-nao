@@ -31,10 +31,7 @@ public class LedsRouter extends RouteBuilder {
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.leds&concurrentConsumers=4")
                 .to("log:IN.avatar.nao1.leds?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
-                    final LumenThing thing;
-                    // "legacy" messages support
-                    final JsonNode jsonNode = toJson.getMapper().readTree(exchange.getIn().getBody(byte[].class));
-                    thing = toJson.getMapper().readValue(exchange.getIn().getBody(byte[].class), LumenThing.class);
+                    final LumenThing thing = toJson.getMapper().readValue(exchange.getIn().getBody(byte[].class), LumenThing.class);
                     log.info("Got LED command: {}", thing);
                     if (thing instanceof LedOperation) {
                         final LedOperation ledOp = (LedOperation) thing;
