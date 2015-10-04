@@ -425,7 +425,7 @@ namespace LumenServer
                     string stringToSend = JsonConvert.SerializeObject(dataToSend);
                     byte[] bufferToSend = Encoding.UTF8.GetBytes(stringToSend);
                     
-                    channelSend.BasicPublish("amq.topic", "avatar.nao1.data.recording", null, bufferToSend);
+                    channelSend.BasicPublish("amq.topic", "avatar.nao1.audio.in", null, bufferToSend);
                     Console.WriteLine("execution audioDevice.record() finished");
                     break;
             }
