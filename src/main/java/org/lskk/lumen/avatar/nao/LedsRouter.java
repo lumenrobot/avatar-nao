@@ -1,7 +1,6 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALLedsProxy;
-import com.fasterxml.jackson.databind.JsonNode;
 import javafx.scene.paint.Color;
 import org.apache.camel.builder.RouteBuilder;
 import org.lskk.lumen.core.LedOperation;
