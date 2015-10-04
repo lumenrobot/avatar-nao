@@ -90,7 +90,7 @@ public class NaoConfig {
         return env.getProperty("nao.port", Integer.class, 9559);
     }
 
-    @Bean(destroyMethod = "shutdown")
+    @Bean(destroyMethod = "shutdown") @ForNao
     public ListeningExecutorService naoExecutor() {
         return MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
     }

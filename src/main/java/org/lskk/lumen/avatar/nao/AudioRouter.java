@@ -211,10 +211,11 @@ public class AudioRouter extends RouteBuilder {
                         audioPlayer.stopAll();
                     } else if (thing instanceof RecordAudio) {
                         final RecordAudio recordAudio = (RecordAudio) thing;
+                        final String naoHomeFolder = "/home/nao";
                         final String remoteFile = "recordings/microphones/recording.wav";
                         log.info("Executing audioDevice.record() to {} ...", remoteFile);
                         audioRecorder.stopMicrophonesRecording();
-                        audioRecorder.startMicrophonesRecording(remoteFile, "wav", 16000,
+                        audioRecorder.startMicrophonesRecording(naoHomeFolder + "/" + remoteFile, "wav", 16000,
                                 new Variant(new int[]{0, 0, 1, 0}));
                         Thread.sleep(Math.round(Optional.ofNullable(recordAudio.getDuration()).orElse(5.0) * 1000));
                         audioRecorder.stopMicrophonesRecording();
@@ -238,14 +239,15 @@ public class AudioRouter extends RouteBuilder {
                         final AudioObject audioObject = new AudioObject();
                         audioObject.setName(FilenameUtils.getName(remoteFile));
                         audioObject.setContentSize((long) rawData.length);
+                        audioObject.setContentType("audio/x-wav");
                         audioObject.setDateCreated(new DateTime(DateTimeZone.forID("Asia/Jakarta")));
                         audioObject.setUploadDate(audioObject.getDateCreated());
                         audioObject.setDatePublished(audioObject.getDateCreated());
                         audioObject.setDateModified(audioObject.getDateCreated());
-                        audioObject.setContentUrl("data:audio/x-wav;base64," +
+                        audioObject.setContentUrl("data:" + audioObject.getContentType() + ";base64," +
                                 Base64.encodeBase64String(rawData));
 
-                        final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.data.recording";
+                        final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.in";
                         producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
                         log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
                     }
