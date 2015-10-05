@@ -55,6 +55,6 @@ public class SpeechExpressionRouter extends RouteBuilder {
                         exchange.getOut().setHeader("recipients", "log:OUT.lumen.speech.expression");
                     }
                 })
-                .recipientList(new HeaderExpression("recipients"));
+                .routingSlip(new HeaderExpression("recipients"));
     }
 }

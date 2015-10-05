@@ -91,7 +91,7 @@ public class CommandRouter extends RouteBuilder {
                         exchange.getOut().setHeader("recipients", "log:OUT.avatar.nao1.command");
                     }
                 })
-                .recipientList(new HeaderExpression("recipients"));
+                .routingSlip(new HeaderExpression("recipients"));
     }
 
 }
