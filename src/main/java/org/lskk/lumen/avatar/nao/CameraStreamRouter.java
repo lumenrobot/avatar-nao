@@ -30,26 +30,37 @@ public class CameraStreamRouter extends RouteBuilder {
     private ToJson toJson;
     @Inject
     private ALVideoDeviceProxy videoDevice;
+    @Inject
+    private NaoVideoConfig naoVideoConfig;
 
     @Override
     public void configure() throws Exception {
-        final int period = 1000 / NaoConfig.CAMERA_FPS;
+        final int period = 1000 / NaoVideoConfig.CAMERA_FPS;
         from("timer:camera?period=" + period)
                 .process(exchange -> {
                     try {
-                        log.trace("Getting image remote '{}' ...", NaoConfig.GVM_ID);
-                        final Variant imageRemoteVariant = videoDevice.getImageRemote(NaoConfig.GVM_ID);
+                        log.trace("Getting image remote '{}' ...", NaoVideoConfig.GVM_ID);
+                        final Variant imageRemoteVariant = videoDevice.getImageRemote(NaoVideoConfig.GVM_ID);
                         //log.info("Image remote variant: {} size", imageRemoteVariant.getSize());
                         final byte[] imageRemote = imageRemoteVariant.getElement(6).toBinary();
-                        log.trace("Image '{}': {} bytes", NaoConfig.GVM_ID, imageRemote.length);
+                        log.trace("Image '{}': {} bytes", NaoVideoConfig.GVM_ID, imageRemote.length);
                         if (log.isTraceEnabled()) {
                             final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                             HexDump.dump(imageRemote, 0, bos, 0);
                             log.trace("{}", bos);
                         }
-                        final BufferedImage bufImg = new BufferedImage(320, 240, BufferedImage.TYPE_3BYTE_BGR);
-                        final byte[] bufImgData = ((DataBufferByte) bufImg.getRaster().getDataBuffer()).getData();
-                        System.arraycopy(imageRemote, 0, bufImgData, 0, imageRemote.length);
+
+                        final YUV422Image yuv422Image = new YUV422Image(imageRemote,
+                                naoVideoConfig.getResolution().getWidth(), naoVideoConfig.getResolution().getHeight());
+//                        final BufferedImage bufImg = new BufferedImage(
+//                                naoVideoConfig.getResolution().getWidth(), naoVideoConfig.getResolution().getHeight(),
+//                                BufferedImage.TYPE_3BYTE_BGR);
+                        final BufferedImage bufImg = new BufferedImage(
+                                naoVideoConfig.getResolution().getWidth(), naoVideoConfig.getResolution().getHeight(),
+                                BufferedImage.TYPE_INT_RGB);
+                        yuv422Image.initImageRgbInt(bufImg);
+//                        final byte[] bufImgData = ((DataBufferByte) bufImg.getRaster().getDataBuffer()).getData();
+                        //System.arraycopy(imageRemote, 0, bufImgData, 0, imageRemote.length);
 
                         final ImageObject imageObject = new ImageObject();
                         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -63,7 +74,7 @@ public class CameraStreamRouter extends RouteBuilder {
                         }
                         exchange.getIn().setBody(imageObject);
                     } finally {
-                        videoDevice.releaseImage(NaoConfig.GVM_ID);
+                        videoDevice.releaseImage(NaoVideoConfig.GVM_ID);
                     }
                 })
                 .bean(toJson)

@@ -21,8 +21,6 @@ public class NaoConfig {
 
     private static Logger log = LoggerFactory.getLogger(NaoConfig.class);
     public static final int sessionTimeoutMs = 5000;
-    public static final String GVM_ID = "res1";
-    public static final int CAMERA_FPS = 1;
 
     @Inject
     private Environment env;

@@ -2,7 +2,12 @@ package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Preconditions;
+import org.apache.camel.Expression;
+import org.apache.camel.Predicate;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.language.HeaderExpression;
+import org.apache.commons.lang3.StringUtils;
 import org.lskk.lumen.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,38 +30,24 @@ public class CommandRouter extends RouteBuilder {
     @Inject
     private ALRobotPostureProxy robotPosture;
     @Inject
-    private ToJson toJson;
-    @Inject
     private ALTextToSpeechProxy tts;
+    @Inject
+    private ToJson toJson;
 
     @Override
     public void configure() throws Exception {
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.NAO.command")
-                .to("log:IN.avatar.NAO.command?showHeaders=true&showAll=true&multiline=true")
+        // avatar.*.command
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.command")
+                .to("log:IN.avatar.nao*.command?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
-                    final LumenThing thing;
-                    // "legacy" messages support
-                    final JsonNode jsonNode = toJson.getMapper().readTree(exchange.getIn().getBody(byte[].class));
-                    if ("motion".equals(jsonNode.path("type").asText()) && "wakeUp".equals(jsonNode.path("method").asText())) {
-                        thing = new WakeUp();
-                    } else if ("motion".equals(jsonNode.path("type").asText()) && "rest".equals(jsonNode.path("method").asText())) {
-                        thing = new Rest();
-                    } else if ("texttospeech".equals(jsonNode.path("type").asText()) && "say".equals(jsonNode.path("method").asText())) {
-                        thing = new Speech(jsonNode.path("parameter").path("text").asText());
-                    } else {
-                        thing = toJson.getMapper().readValue(
+                    final LumenThing thing = toJson.getMapper().readValue(
                                 exchange.getIn().getBody(byte[].class), LumenThing.class);
-                    }
-                    log.info("Got avatar command: {}", thing);
+                    log.info("Got avatar.nao* command: {}", thing);
                     if (thing instanceof AudioVolume) {
                         log.info("Set volume {}", thing);
                         final int volumePct = (int) Math.round(((AudioVolume) thing).getVolume() * 100);
                         audioDevice.setOutputVolume(volumePct);
                         tts.say("My volume is now " + volumePct + "%");
-                    } else if (thing instanceof Speech) {
-                        log.info("Speaking: {}", ((Speech) thing).getMarkup());
-                        tts.say(((Speech) thing).getMarkup());
-                        log.info("Spoken");
                     } else if (thing instanceof WakeUp) {
                         log.info("Waking up...");
                         motion.wakeUp();
@@ -87,6 +78,20 @@ public class CommandRouter extends RouteBuilder {
                                 new Variant(naoAngle), new Variant((float) (double) jointInterpolateAngle.getDuration()), true);
                         log.info("Interpolated.");
                     }
-                });
+
+                    // reply
+                    exchange.getOut().setBody("{}");
+                    final String replyTo = exchange.getIn().getHeader("rabbitmq.REPLY_TO", String.class);
+                    if (replyTo != null) {
+                        exchange.getOut().setHeader("rabbitmq.ROUTING_KEY", replyTo);
+                        exchange.getOut().setHeader("rabbitmq.EXCHANGE_NAME", "");
+                        exchange.getOut().setHeader("recipients",
+                                "rabbitmq://localhost/dummy?connectionFactory=#amqpConnFactory&autoDelete=false,log:OUT.avatar.nao1.command");
+                    } else {
+                        exchange.getOut().setHeader("recipients", "log:OUT.avatar.nao1.command");
+                    }
+                })
+                .recipientList(new HeaderExpression("recipients"));
     }
+
 }
