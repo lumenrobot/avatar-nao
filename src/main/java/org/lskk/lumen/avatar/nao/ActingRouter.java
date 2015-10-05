@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 
 @Component
-public class ActorRouter extends RouteBuilder {
+public class ActingRouter extends RouteBuilder {
 
-    private static final Logger log = LoggerFactory.getLogger(ActorRouter.class);
+    private static final Logger log = LoggerFactory.getLogger(ActingRouter.class);
 
     @Inject
     private ALLedsProxy ledsProxy;
@@ -32,8 +32,8 @@ public class ActorRouter extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.actor")
-                .to("log:IN.avatar.nao1.actor?showHeaders=true&showAll=true&multiline=true")
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.acting")
+                .to("log:IN.avatar.nao1.acting?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(exchange.getIn().getBody(byte[].class), LumenThing.class);
                     log.info("Got actor command: {}", thing);
