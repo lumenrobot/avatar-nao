@@ -11,7 +11,7 @@ will just use JDK standard ImageIO.
 On Windows 64-bit, you **must** [use the 32-bit JDK](https://github.com/aldebaran/jnaoqi/issues/1).
 This is for both jnaoqi 1.14.x and 2.x.
 
-We currently use jnaoqi v1.14.5, please copy `lib_win32/jnaoqi.dll` to `C:\ProgramData\Oracle\Java\javapath`
+We currently use jnaoqi v1.14.5, please copy `lib_win32/jnaoqi.dll` to `C:\Windows\Sun\Java\bin`
 
 If you get this error:
 
