@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.lskk.lumen</groupId>
-	<artifactId>avatar-nao</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>org.lskk.lumen.avatar.nao</artifactId>
+	<version>3.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>Lumen Avatar NAO</name>
@@ -20,7 +20,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<start-class>org.lskk.lumen.speech.recognition.SpeechRecognitionApp</start-class>
+		<start-class>org.lskk.lumen.avatar.nao.AvatarNaoApp</start-class>
 		<java.version>1.8</java.version>
 	</properties>
 
