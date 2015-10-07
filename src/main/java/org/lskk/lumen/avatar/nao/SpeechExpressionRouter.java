@@ -55,7 +55,7 @@ public class SpeechExpressionRouter extends RouteBuilder {
                         exchange.getOut().setHeader("rabbitmq.ROUTING_KEY", replyTo);
                         exchange.getOut().setHeader("rabbitmq.EXCHANGE_NAME", "");
                         exchange.getOut().setHeader("recipients",
-                                "rabbitmq://dummy/amq.topic?connectionFactory=#amqpConnFactory&autoDelete=false,log:OUT.lumen.speech.expression");
+                                "rabbitmq://dummy/dummy?connectionFactory=#amqpConnFactory&autoDelete=false,log:OUT.lumen.speech.expression");
                     } else {
                         exchange.getOut().setHeader("recipients", "log:OUT.lumen.speech.expression");
                     }
