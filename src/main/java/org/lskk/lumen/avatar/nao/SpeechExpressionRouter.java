@@ -27,18 +27,20 @@ public class SpeechExpressionRouter extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         // lumen.speech.expression
+        // TODO: we should delay e.g. 500ms to see if speech-expression handles it (and notifies with actionStatus=ACTIVE_ACTION_STATUS),
+        // otherwise NAO TTS will handle it
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=lumen.speech.expression")
                 .to("log:IN.lumen.speech.expression?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                             exchange.getIn().getBody(byte[].class), LumenThing.class);
                     log.info("Got speech.expression command: {}", thing);
-                    if (thing instanceof Speech) {
-                        final Speech speech = (Speech) thing;
-                        if (StringUtils.startsWith(speech.getAvatarId(), "nao")) {
-                            log.info("Speaking for {}: {}", speech.getAvatarId(), speech.getMarkup());
-                            tts.say(speech.getMarkup());
-                            log.debug("Spoken for {}: {}", speech.getAvatarId(), speech.getMarkup());
+                    if (thing instanceof CommunicateAction) {
+                        final CommunicateAction communicateAction = (CommunicateAction) thing;
+                        if (StringUtils.startsWith(communicateAction.getAvatarId(), "nao")) {
+                            log.info("Speaking {} for {}: {}", communicateAction.getInLanguage(), communicateAction.getAvatarId(), communicateAction.getObject());
+                            tts.say(communicateAction.getObject());
+                            log.debug("Spoken {} for {}: {}", communicateAction.getInLanguage(), communicateAction.getAvatarId(), communicateAction.getObject());
                         }
                     }
 
