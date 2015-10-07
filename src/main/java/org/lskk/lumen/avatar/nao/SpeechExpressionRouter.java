@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Created by ceefour on 10/2/15.
@@ -38,9 +40,10 @@ public class SpeechExpressionRouter extends RouteBuilder {
                     if (thing instanceof CommunicateAction) {
                         final CommunicateAction communicateAction = (CommunicateAction) thing;
                         if (StringUtils.startsWith(communicateAction.getAvatarId(), "nao")) {
-                            log.info("Speaking {} for {}: {}", communicateAction.getInLanguage(), communicateAction.getAvatarId(), communicateAction.getObject());
+                            final Locale lang = Optional.ofNullable(communicateAction.getInLanguage()).orElse(Locale.US);
+                            log.info("Speaking {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
                             tts.say(communicateAction.getObject());
-                            log.debug("Spoken {} for {}: {}", communicateAction.getInLanguage(), communicateAction.getAvatarId(), communicateAction.getObject());
+                            log.debug("Spoken {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
                         }
                     }
 
