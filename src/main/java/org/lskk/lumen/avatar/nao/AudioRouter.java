@@ -4,6 +4,7 @@ import com.aldebaran.proxy.*;
 import com.github.ooxi.jdatauri.DataUri;
 import com.google.common.base.Preconditions;
 import org.apache.camel.ProducerTemplate;
+import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
@@ -13,6 +14,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.lskk.lumen.core.*;
+import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -48,6 +50,8 @@ public class AudioRouter extends RouteBuilder {
     private ALAudioRecorderProxy audioRecorder;
     @Inject
     private ToJson toJson;
+    @Inject
+    private AsError asError;
     @Inject
     private ProducerTemplate producerTemplate;
 
@@ -151,6 +155,9 @@ public class AudioRouter extends RouteBuilder {
         final AudioFormat naoFormat = new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16,
                 channelCount, channelCount * 2, sampleRate, false);
+
+        onException(Exception.class).bean(asError).bean(toJson).handled(true);
+        errorHandler(new LoggingErrorHandlerBuilder(log));
         // audio
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio&concurrentConsumers=4")
                 .to("log:IN.avatar.nao1.audio?showHeaders=true&showAll=true&multiline=true")
@@ -161,6 +168,7 @@ public class AudioRouter extends RouteBuilder {
                     if (thing instanceof StopAudio) {
                         log.info("Stopping audio!");
                         audioPlayer.stopAll();
+                        exchange.getIn().setBody(new Status());
                     } else if (thing instanceof RecordAudio) {
                         final int recordingSampleRate = 16000;
                         final String recordingMimeType = "audio/ogg";
@@ -205,8 +213,12 @@ public class AudioRouter extends RouteBuilder {
                         final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.in";
                         producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
                         log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
+
+                        exchange.getIn().setBody(new Status());
+                    } else {
+                        exchange.getOut().setBody(null);
                     }
-                });
+                }).bean(toJson);
         // audio.out
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.out")
                 .to("log:IN.avatar.nao1.audio.out?showHeaders=true&showAll=true&multiline=true")
@@ -260,7 +272,10 @@ public class AudioRouter extends RouteBuilder {
                         } else {
                             throw new NaoException("Unknown audio URL: " + contentUrl);
                         }
+                        exchange.getIn().setBody(new Status());
+                    } else {
+                        exchange.getOut().setBody(null);
                     }
-                });
+                }).bean(toJson);
     }
 }

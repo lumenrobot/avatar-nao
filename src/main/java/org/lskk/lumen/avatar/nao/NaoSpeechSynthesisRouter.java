@@ -1,10 +1,13 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.language.HeaderExpression;
 import org.apache.commons.lang3.StringUtils;
 import org.lskk.lumen.core.*;
+import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,26 +20,30 @@ import java.util.Optional;
  * Created by ceefour on 10/2/15.
  */
 @Component
-public class SpeechExpressionRouter extends RouteBuilder {
+public class NaoSpeechSynthesisRouter extends RouteBuilder {
 
-    private static final Logger log = LoggerFactory.getLogger(SpeechExpressionRouter.class);
+    private static final Logger log = LoggerFactory.getLogger(NaoSpeechSynthesisRouter.class);
 
     @Inject
     private ToJson toJson;
+    @Inject
+    private AsError asError;
     @Inject
     private ALTextToSpeechProxy tts;
 
     @Override
     public void configure() throws Exception {
+        onException(Exception.class).bean(asError).bean(toJson).handled(true);
+        errorHandler(new LoggingErrorHandlerBuilder(log));
         // lumen.speech.expression
         // TODO: we should delay e.g. 500ms to see if speech-expression handles it (and notifies with actionStatus=ACTIVE_ACTION_STATUS),
         // otherwise NAO TTS will handle it
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=lumen.speech.expression")
-                .to("log:IN.lumen.speech.expression?showHeaders=true&showAll=true&multiline=true")
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=lumen.speech.synthesis")
+                .to("log:IN.lumen.speech.synthesis?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                             exchange.getIn().getBody(byte[].class), LumenThing.class);
-                    log.info("Got speech.expression command: {}", thing);
+                    log.info("Got speech.synthesis command: {}", thing);
                     if (thing instanceof CommunicateAction) {
                         final CommunicateAction communicateAction = (CommunicateAction) thing;
                         if (StringUtils.startsWith(communicateAction.getAvatarId(), "nao")) {
@@ -45,21 +52,12 @@ public class SpeechExpressionRouter extends RouteBuilder {
                             tts.say(communicateAction.getObject());
                             log.debug("Spoken {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
                         }
-                    }
-
-                    // reply
-                    exchange.getOut().setBody("{}");
-                    final String replyTo = exchange.getIn().getHeader("rabbitmq.REPLY_TO", String.class);
-                    if (replyTo != null) {
-                        log.debug("Sending reply to {} ...", replyTo);
-                        exchange.getOut().setHeader("rabbitmq.ROUTING_KEY", replyTo);
-                        exchange.getOut().setHeader("rabbitmq.EXCHANGE_NAME", "");
-                        exchange.getOut().setHeader("recipients",
-                                "rabbitmq://dummy/dummy?connectionFactory=#amqpConnFactory&autoDelete=false,log:OUT.lumen.speech.expression");
+                        exchange.getIn().setBody(new Status());
                     } else {
-                        exchange.getOut().setHeader("recipients", "log:OUT.lumen.speech.expression");
+                        exchange.getOut().setBody(null);
                     }
                 })
-                .routingSlip(new HeaderExpression("recipients"));
+                .bean(toJson);
+//                .to("log:OUT.lumen.speech.synthesis");
     }
 }

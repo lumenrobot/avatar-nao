@@ -4,11 +4,14 @@ import com.aldebaran.proxy.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import org.apache.camel.Expression;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.Predicate;
+import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.language.HeaderExpression;
 import org.apache.commons.lang3.StringUtils;
 import org.lskk.lumen.core.*;
+import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -33,9 +36,13 @@ public class CommandRouter extends RouteBuilder {
     private ALTextToSpeechProxy tts;
     @Inject
     private ToJson toJson;
+    @Inject
+    private AsError asError;
 
     @Override
     public void configure() throws Exception {
+        onException(Exception.class).bean(asError).bean(toJson).handled(true);
+        errorHandler(new LoggingErrorHandlerBuilder(log));
         // avatar.*.command
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.command")
                 .to("log:IN.avatar.nao*.command?showHeaders=true&showAll=true&multiline=true")
@@ -80,18 +87,10 @@ public class CommandRouter extends RouteBuilder {
                     }
 
                     // reply
-                    exchange.getOut().setBody("{}");
-                    final String replyTo = exchange.getIn().getHeader("rabbitmq.REPLY_TO", String.class);
-                    if (replyTo != null) {
-                        exchange.getOut().setHeader("rabbitmq.ROUTING_KEY", replyTo);
-                        exchange.getOut().setHeader("rabbitmq.EXCHANGE_NAME", "");
-                        exchange.getOut().setHeader("recipients",
-                                "rabbitmq://localhost/dummy?connectionFactory=#amqpConnFactory&autoDelete=false,log:OUT.avatar.nao1.command");
-                    } else {
-                        exchange.getOut().setHeader("recipients", "log:OUT.avatar.nao1.command");
-                    }
+                    exchange.getIn().setBody(new Status());
                 })
-                .routingSlip(new HeaderExpression("recipients"));
+                .bean(toJson);
+//                .to("log:OUT.avatar.nao1.command");
     }
 
 }

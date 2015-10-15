@@ -2,9 +2,12 @@ package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.lskk.lumen.core.ActingPerformance;
 import org.lskk.lumen.core.LumenThing;
+import org.lskk.lumen.core.Status;
+import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -27,11 +30,14 @@ public class ActingRouter extends RouteBuilder {
     @Inject
     private ToJson toJson;
     @Inject
-    @ForNao
+    private AsError asError;
+    @Inject @ForNao
     private ListeningExecutorService naoExecutor;
 
     @Override
     public void configure() throws Exception {
+        onException(Exception.class).bean(asError).bean(toJson).handled(true);
+        errorHandler(new LoggingErrorHandlerBuilder(log));
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.acting")
                 .to("log:IN.avatar.nao1.acting?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
@@ -167,7 +173,11 @@ public class ActingRouter extends RouteBuilder {
                                 motion.rest();
                             }
                         }
+                        exchange.getIn().setBody(new Status());
+                    } else {
+                        exchange.getOut().setBody(null);
                     }
-                });
+                })
+                .bean(toJson);
     }
 }
