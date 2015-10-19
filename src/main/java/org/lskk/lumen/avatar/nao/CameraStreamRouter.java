@@ -2,12 +2,14 @@ package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALVideoDeviceProxy;
 import com.aldebaran.proxy.Variant;
+import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.HexDump;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.lskk.lumen.core.ImageObject;
+import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -29,12 +31,16 @@ public class CameraStreamRouter extends RouteBuilder {
     @Inject
     private ToJson toJson;
     @Inject
+    private AsError asError;
+    @Inject
     private ALVideoDeviceProxy videoDevice;
     @Inject
     private NaoVideoConfig naoVideoConfig;
 
     @Override
     public void configure() throws Exception {
+        onException(Exception.class).bean(asError).bean(toJson).handled(true);
+        errorHandler(new LoggingErrorHandlerBuilder(log));
         final int period = 1000 / NaoVideoConfig.CAMERA_FPS;
         from("timer:camera?period=" + period)
                 .process(exchange -> {

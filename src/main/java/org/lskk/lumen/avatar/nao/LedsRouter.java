@@ -2,10 +2,13 @@ package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALLedsProxy;
 import javafx.scene.paint.Color;
+import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.lskk.lumen.core.LedOperation;
 import org.lskk.lumen.core.LedOperationKind;
 import org.lskk.lumen.core.LumenThing;
+import org.lskk.lumen.core.Status;
+import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -24,9 +27,13 @@ public class LedsRouter extends RouteBuilder {
     private ALLedsProxy ledsProxy;
     @Inject
     private ToJson toJson;
+    @Inject
+    private AsError asError;
 
     @Override
     public void configure() throws Exception {
+        onException(Exception.class).bean(asError).bean(toJson).handled(true);
+        errorHandler(new LoggingErrorHandlerBuilder(log));
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.leds&concurrentConsumers=4")
                 .to("log:IN.avatar.nao1.leds?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
@@ -51,7 +58,11 @@ public class LedsRouter extends RouteBuilder {
                         } else if (ledOp.getKind() == LedOperationKind.RASTA) {
                             ledsProxy.rasta(ledOp.getDuration().floatValue());
                         }
+                        exchange.getIn().setBody(new Status());
+                    } else {
+                        exchange.getOut().setBody(null);
                     }
-                });
+                })
+                .bean(toJson);
     }
 }
