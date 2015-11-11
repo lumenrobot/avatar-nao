@@ -1,6 +1,7 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALVideoDeviceProxy;
+import com.aldebaran.proxy.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +19,9 @@ import java.io.IOException;
 @Configuration
 public class NaoVideoConfig {
 
-    public static final String GVM_ID = "res1";
-    public static final int CAMERA_FPS = 2;
+    public static final String GVM_TOP_ID = "top";
+    public static final String GVM_BOTTOM_ID = "bottom";
+    public static final int CAMERA_FPS = 1;
     private static final Logger log = LoggerFactory.getLogger(NaoVideoConfig.class);
 
     @Inject
@@ -44,8 +46,8 @@ public class NaoVideoConfig {
 
     @PostConstruct
     public void init() throws IOException {
-        //log.info("Start cleanly: Unsubscribe all instances of VideoDevice '{}' ...", GVM_ID);
-        //naoVideoDevice().unsubscribeAllInstances(GVM_ID); // start with clean state
+        //log.info("Start cleanly: Unsubscribe all instances of VideoDevice '{}' ...", GVM_TOP_ID);
+        //naoVideoDevice().unsubscribeAllInstances(GVM_TOP_ID); // start with clean state
 
         // make sure we're connected to VideoDevice
         naoVideoDevice();
@@ -58,27 +60,47 @@ public class NaoVideoConfig {
         final int COLORSPACE_BGR = 13;
         final int COLORSPACE_YUV422 = 9;
         resolution = env.getRequiredProperty("nao.video.resolution", ImageResolution.class);
-        log.info("Subscribing to {} VideoDevice '{}' ...", resolution, GVM_ID);
+
+        /**
+         * Hendy's note: NAO V3.3 camera management is "buggy" (?), i.e.
+         * if the active camera is 0, setFrameGrabber(1) will error: Can't launch camera driver
+         * and subscribeCamera() is same as subscribe(), because it will just use the same camera index as active camera
+         * So our workaround is: subscribeCamera(GVM_TOP_ID) but
+         * for each getImageRemote we call setActiveCamera(0) and setActiveCamera(1)
+         */
+
+        log.info("Subscribing to {} VideoDevice '{}' '{}' ...", resolution, GVM_TOP_ID, GVM_BOTTOM_ID);
         try {
-            naoVideoDevice().subscribe(GVM_ID, resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+            final String gvmTopId = naoVideoDevice().subscribeCamera(GVM_TOP_ID, 0,
+                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+//            final String gvmBottomId = naoVideoDevice().subscribeCamera(GVM_BOTTOM_ID, 1,
+//                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+            log.info("Subscribed to {} VideoDevice '{}' '{}'", resolution,
+                    GVM_TOP_ID, GVM_BOTTOM_ID);
         } catch (Exception e) {
-            log.info("Unsubscribe VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().unsubscribe(GVM_ID);
-            log.info("Re-subscribing to {} VideoDevice '{}' ...", resolution, GVM_ID);
-            naoVideoDevice().subscribe(GVM_ID, resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+            log.info("Unsubscribe VideoDevice '{}' '{}' ...", GVM_TOP_ID, GVM_BOTTOM_ID);
+//            naoVideoDevice().unsubscribe(GVM_BOTTOM_ID);
+            naoVideoDevice().unsubscribe(GVM_TOP_ID);
+            log.info("Re-subscribing to {} VideoDevice '{}' '{}' ...", resolution, GVM_TOP_ID, GVM_BOTTOM_ID);
+            final String gvmTopId = naoVideoDevice().subscribeCamera(GVM_TOP_ID, 0,
+                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+//            final String gvmBottomId = naoVideoDevice().subscribeCamera(GVM_BOTTOM_ID, 1,
+//                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+            log.info("Subscribed to {} VideoDevice '{}' '{}'", resolution,
+                    GVM_TOP_ID, GVM_BOTTOM_ID);
         }
     }
 
     @PreDestroy
     public void destroy() throws IOException {
         try {
-            log.info("Releasing image VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().releaseImage(GVM_ID);
+            log.info("Releasing images VideoDevice '{}' '{}' ...", GVM_TOP_ID, GVM_BOTTOM_ID);
+//            naoVideoDevice().releaseImage(GVM_BOTTOM_ID);
+            naoVideoDevice().releaseImage(GVM_TOP_ID);
         } finally {
-            log.info("Unsubscribe VideoDevice '{}' ...", GVM_ID);
-            naoVideoDevice().unsubscribe(GVM_ID);
-            log.info("Stop frame grabber...");
-            naoVideoDevice().stopFrameGrabber(0);
+            log.info("Unsubscribe VideoDevice '{}' '{}' ...", GVM_TOP_ID, GVM_BOTTOM_ID);
+//            naoVideoDevice().unsubscribe(GVM_BOTTOM_ID);
+            naoVideoDevice().unsubscribe(GVM_TOP_ID);
         }
     }
 
