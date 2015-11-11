@@ -59,7 +59,7 @@ public class CameraStreamRouter extends RouteBuilder {
                         final int topId = topImageRemoteVariant.getElement(7).toInt();
                         final byte[] bottomImg = bottomImageRemoteVariant.getElement(6).toBinary();
                         final int bottomId = bottomImageRemoteVariant.getElement(7).toInt();
-                        log.info("Image {}/{}={} bytes, {}/{}={} bytes", NaoVideoConfig.GVM_TOP_ID, topId, topImg.length,
+                        log.trace("Image {}/{}={} bytes, {}/{}={} bytes", NaoVideoConfig.GVM_TOP_ID, topId, topImg.length,
                                 NaoVideoConfig.GVM_BOTTOM_ID, bottomId, bottomImg.length);
 
                         // process TOP Image
