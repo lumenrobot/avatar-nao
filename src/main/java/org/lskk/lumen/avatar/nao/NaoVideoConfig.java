@@ -21,7 +21,7 @@ public class NaoVideoConfig {
 
     public static final String GVM_TOP_ID = "top";
     public static final String GVM_BOTTOM_ID = "bottom";
-    public static final int CAMERA_FPS = 1;
+//    public static final int CAMERA_FPS = 1;
     private static final Logger log = LoggerFactory.getLogger(NaoVideoConfig.class);
 
     @Inject
@@ -29,6 +29,11 @@ public class NaoVideoConfig {
     @Inject
     private Environment env;
     private ImageResolution resolution;
+    private int cameraFps;
+
+    public int getCameraFps() {
+        return this.cameraFps;
+    }
 
     @Bean
     public ALVideoDeviceProxy naoVideoDevice() throws IOException {
@@ -46,6 +51,8 @@ public class NaoVideoConfig {
 
     @PostConstruct
     public void init() throws IOException {
+        cameraFps = env.getRequiredProperty("nao.video.fps", Integer.class);
+
         //log.info("Start cleanly: Unsubscribe all instances of VideoDevice '{}' ...", GVM_TOP_ID);
         //naoVideoDevice().unsubscribeAllInstances(GVM_TOP_ID); // start with clean state
 
@@ -72,7 +79,7 @@ public class NaoVideoConfig {
         log.info("Subscribing to {} VideoDevice '{}' '{}' ...", resolution, GVM_TOP_ID, GVM_BOTTOM_ID);
         try {
             final String gvmTopId = naoVideoDevice().subscribeCamera(GVM_TOP_ID, 0,
-                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+                    resolution.getNaoParameterId(), COLORSPACE_YUV422, cameraFps);
 //            final String gvmBottomId = naoVideoDevice().subscribeCamera(GVM_BOTTOM_ID, 1,
 //                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
             log.info("Subscribed to {} VideoDevice '{}' '{}'", resolution,
@@ -83,7 +90,7 @@ public class NaoVideoConfig {
             naoVideoDevice().unsubscribe(GVM_TOP_ID);
             log.info("Re-subscribing to {} VideoDevice '{}' '{}' ...", resolution, GVM_TOP_ID, GVM_BOTTOM_ID);
             final String gvmTopId = naoVideoDevice().subscribeCamera(GVM_TOP_ID, 0,
-                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
+                    resolution.getNaoParameterId(), COLORSPACE_YUV422, cameraFps);
 //            final String gvmBottomId = naoVideoDevice().subscribeCamera(GVM_BOTTOM_ID, 1,
 //                    resolution.getNaoParameterId(), COLORSPACE_YUV422, CAMERA_FPS);
             log.info("Subscribed to {} VideoDevice '{}' '{}'", resolution,
