@@ -78,6 +78,7 @@ public class CameraStreamRouter extends RouteBuilder {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
         final int period = 1000 / naoVideoConfig.getCameraFps();
+        log.info("Cameras capture timer with period = {}ms", period);
         from("timer:camera?period=" + period)
                 .process(exchange -> {
                     final byte[] topYuv422;
