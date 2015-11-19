@@ -2,15 +2,13 @@ package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALVideoDeviceProxy;
 import com.aldebaran.proxy.Variant;
+import com.google.common.base.Preconditions;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.HexDump;
-import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacpp.opencv_core;
-import org.bytedeco.javacpp.opencv_highgui;
-import org.bytedeco.javacpp.opencv_imgproc;
+import org.bytedeco.javacpp.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.lskk.lumen.core.ImageObject;
@@ -23,6 +21,7 @@ import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * Created by ceefour on 10/2/15.
@@ -43,14 +42,34 @@ public class CameraStreamRouter extends RouteBuilder {
     @Inject
     private ProducerTemplate producer;
 
+    /**
+     * Requires:
+     *
+     * // RuntimeException: No native JavaCPP library in memory. (Has Loader.load() been called?) - https://github.com/bytedeco/javacpp/issues/44
+     * Loader.load(opencv_core.class);
+     *
+     * @param topImg
+     * @return
+     */
     protected byte[] yuv422ToJpg(byte[] topImg) {
         // http://study.marearts.com/2014/12/yuyv-to-rgb-and-rgb-to-yuyv-using.html
         final byte[] topBytes;
-        final opencv_core.Mat yuv422Mat = new opencv_core.Mat(naoVideoConfig.getResolution().getHeight(), naoVideoConfig.getResolution().getWidth(),
-                opencv_core.CV_8UC2);
+        final BytePointer topPtr = new BytePointer(topImg);
+//        final opencv_core.Mat yuv422Mat = new opencv_core.Mat(
+//                naoVideoConfig.getResolution().getHeight(), naoVideoConfig.getResolution().getWidth(),
+//                opencv_core.CV_8UC2);
+        final opencv_core.Mat yuv422Mat = new opencv_core.Mat(
+                naoVideoConfig.getResolution().getHeight(), naoVideoConfig.getResolution().getWidth(),
+                opencv_core.CV_8UC2, topPtr);
         final opencv_core.Mat bgrMat;
         try {
-            yuv422Mat.ptr().put(topImg);
+            //yuv422Mat.asByteBuffer().limit(topImg.length);
+            log.trace("Input is {} bytes, yuv422Mat: limit={} capacity={} {}",
+                    topImg.length, yuv422Mat.ptr().limit(), yuv422Mat.ptr().capacity(), yuv422Mat);
+//            Preconditions.checkState(topImg.length == yuv422Mat.asByteBuffer().limit(),
+//                    "Input is %s bytes, but yuv422Mat is %s bytes %s",
+//                    topImg.length, yuv422Mat.asByteBuffer().limit(), yuv422Mat);
+//            yuv422Mat.asByteBuffer().put(topImg);
             bgrMat = new opencv_core.Mat(naoVideoConfig.getResolution().getHeight(), naoVideoConfig.getResolution().getWidth(),
                     opencv_core.CV_8UC3);
             try {
@@ -79,6 +98,8 @@ public class CameraStreamRouter extends RouteBuilder {
         errorHandler(new LoggingErrorHandlerBuilder(log));
         final int period = 1000 / naoVideoConfig.getCameraFps();
         log.info("Cameras capture timer with period = {}ms", period);
+        // RuntimeException: No native JavaCPP library in memory. (Has Loader.load() been called?) - https://github.com/bytedeco/javacpp/issues/44
+        Loader.load(opencv_core.class);
         from("timer:camera?period=" + period)
                 .process(exchange -> {
                     final byte[] topYuv422;
