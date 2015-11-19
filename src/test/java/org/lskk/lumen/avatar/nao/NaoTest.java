@@ -48,9 +48,12 @@ public class NaoTest {
 
     @Test
     public void stand() throws InterruptedException {
-        log.info("Standing...");
+        log.info("Waking up...");
         motion.wakeUp();
+        motion.waitUntilMoveIsFinished();
+        log.info("Standing...");
         robotPosture.goToPosture("Stand", 0.7f);
+        motion.waitUntilMoveIsFinished();
         log.info("Stood. (waiting)");
         Thread.sleep(2000);
         log.info("Resting...");

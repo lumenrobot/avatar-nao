@@ -1,6 +1,7 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
@@ -98,6 +99,7 @@ public class NaoConfig {
         try {
             log.info("Initializing Motion proxy at {}:{}...", getNaoHost(), getNaoPort());
             final ALMotionProxy motionProxy = new ALMotionProxy(getNaoHost(), getNaoPort());
+            log.info("Motion {}: {}", motionProxy.version(), motionProxy.getSummary());
             final boolean restAtInit = env.getProperty("nao.motion.rest-at-init", Boolean.class, true);
             if (restAtInit) {
                 log.info("Resting NAO...");
@@ -164,7 +166,9 @@ public class NaoConfig {
     public ALRobotPostureProxy naoRobotPosture() throws IOException {
         try {
             log.info("Initializing RobotPosture at {}:{}...", getNaoHost(), getNaoPort());
-            return new ALRobotPostureProxy(getNaoHost(), getNaoPort());
+            final ALRobotPostureProxy robotPosture = new ALRobotPostureProxy(getNaoHost(), getNaoPort());
+            log.info("RobotPosture {}: {}", robotPosture.version(), robotPosture.getPostureList());
+            return robotPosture;
         } catch (Exception e) {
             throw new IOException("Cannot connect NAO RobotPosture at " + getNaoHost() + ":" + getNaoPort(), e);
         }
