@@ -48,9 +48,14 @@ public class NaoSpeechSynthesisRouter extends RouteBuilder {
                         final CommunicateAction communicateAction = (CommunicateAction) thing;
                         if (StringUtils.startsWith(communicateAction.getAvatarId(), "nao")) {
                             final Locale lang = Optional.ofNullable(communicateAction.getInLanguage()).orElse(Locale.US);
-                            log.info("Speaking {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
-                            tts.say(communicateAction.getObject());
-                            log.debug("Spoken {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
+                            if ("en".equals(lang.getLanguage())) {
+                                log.info("Speaking {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
+                                tts.say(communicateAction.getObject());
+                                log.debug("Spoken {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
+                            } else {
+                                log.info("Language '{}' not supported by {}, skipping: {}",
+                                        lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
+                            }
                         }
                         exchange.getIn().setBody(new Status());
                     } else {
