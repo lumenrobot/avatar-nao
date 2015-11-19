@@ -61,10 +61,8 @@ public class CommandRouter extends RouteBuilder {
                         log.info("Woke up");
                     } else if (thing instanceof PostureChange) {
                         log.info("Changing posture {}", thing);
-//                        robotPosture.goToPosture(((PostureChange) thing).getPostureId(),
-//                                (float) (double) ((PostureChange) thing).getSpeed());
-                        // workaround for: https://github.com/lumenrobot/avatar-nao/issues/3
-                        robotPosture.goToPosture(((PostureChange) thing).getPostureId(), 1f);
+                        robotPosture.goToPosture(((PostureChange) thing).getPostureId(),
+                                (float) (double) ((PostureChange) thing).getSpeed());
                         log.info("Posture changed.");
                     } else if (thing instanceof Rest) {
                         log.info("Resting...");

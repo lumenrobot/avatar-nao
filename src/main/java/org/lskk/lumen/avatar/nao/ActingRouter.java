@@ -87,7 +87,7 @@ public class ActingRouter extends RouteBuilder {
 
                                 case DANCE_GANGNAM:
                                     log.info("start music");
-                                    posture.goToPosture("StandInit", 1f);
+                                    posture.goToPosture("StandInit", 0.5f);
                                     naoExecutor.submit(() -> audioPlayer.playFile("/home/nao/gangnam.mp3"));
                                     motion.setAngles(
                                             new Variant(new String[]{"RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw"}),
@@ -126,14 +126,14 @@ public class ActingRouter extends RouteBuilder {
                                                 new Variant(new float[]{0.51f, -0.73f, 0.78f}), 0.3f);
                                         Thread.sleep(500);
                                     }
-                                    posture.goToPosture("Stand", 1f);
+                                    posture.goToPosture("Stand", 0.5f);
                                     break;
 
                                 case SING_MANUK:
                                     log.debug("Start singing {}", actingPerformance.getScript());
                                     naoExecutor.submit(() -> audioPlayer.playFile("/home/nao/manuk.mp3"));
                                     Thread.sleep(15000);
-                                    posture.goToPosture("StandInit", 1f);
+                                    posture.goToPosture("StandInit", 0.5f);
                                     motion.setAngles(
                                             new Variant(new String[]{"RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw"}),
                                             new Variant(new float[]{0.19f, 0.05f, 0.54f, 1.54f, 0.16f}), 0.2f);
@@ -147,11 +147,11 @@ public class ActingRouter extends RouteBuilder {
                                                 new Variant(new float[]{-0.89f, 0.36f, -0.74f, -0.05f, 0.26f}), 0.1f);
                                         Thread.sleep(1500);
                                     }
-                                    posture.goToPosture("Stand", 1f);
+                                    posture.goToPosture("Stand", 0.5f);
                                     break;
 
                                 case SING_UPTOWN:
-                                    posture.goToPosture("StandInit", 1f);
+                                    posture.goToPosture("StandInit", 0.5f);
                                     naoExecutor.submit(() -> audioPlayer.playFile("/home/nao/uptown.mp3"));
                                     for (int i = 0; i <= 10; i++) {
                                         motion.setAngles(
