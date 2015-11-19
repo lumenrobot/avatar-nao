@@ -129,7 +129,7 @@ public class CameraStreamRouter extends RouteBuilder {
 //                        videoDevice.releaseImage(NaoVideoConfig.GVM_BOTTOM_ID);
                         videoDevice.releaseImage(NaoVideoConfig.GVM_TOP_ID);
                     }
-                    log.debug("Image {}/{}={} bytes, {}/{}={} bytes", NaoVideoConfig.GVM_TOP_ID, topId, topYuv422.length,
+                    log.trace("Image {}/{}={} bytes, {}/{}={} bytes", NaoVideoConfig.GVM_TOP_ID, topId, topYuv422.length,
                             NaoVideoConfig.GVM_BOTTOM_ID, bottomId, bottomYuv422.length);
 
                     // process TOP Image
@@ -171,7 +171,7 @@ public class CameraStreamRouter extends RouteBuilder {
                             "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.bottom",
                             toJson.apply(bottomImageObject));
 
-                    log.debug("Sent JPG {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
+                    log.trace("Sent JPG {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
                             NaoVideoConfig.GVM_BOTTOM_ID, bottomJpg.length);
 
                 });

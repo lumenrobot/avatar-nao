@@ -1,12 +1,18 @@
 package org.lskk.lumen.avatar.nao;
 
-import com.aldebaran.proxy.*;
+import com.aldebaran.proxy.ALAudioDeviceProxy;
+import com.aldebaran.proxy.ALAudioPlayerProxy;
+import com.aldebaran.proxy.ALAudioRecorderProxy;
+import com.aldebaran.proxy.Variant;
 import com.github.ooxi.jdatauri.DataUri;
 import com.google.common.base.Preconditions;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.ftp.FTP;
@@ -22,13 +28,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -37,6 +37,7 @@ import java.util.Optional;
 public class AudioRouter extends RouteBuilder {
 
     private static final Logger log = LoggerFactory.getLogger(AudioRouter.class);
+    private static final DefaultExecutor executor = new DefaultExecutor();
 
     @Inject
     private Environment env;
@@ -92,69 +93,73 @@ public class AudioRouter extends RouteBuilder {
         }
     }
 
-    public static AudioData convertAudioData(byte[] sourceBytes, AudioFormat audioFormat) throws IOException, UnsupportedAudioFileException {
-        if (sourceBytes == null || sourceBytes.length == 0 || audioFormat == null) {
-            throw new IllegalArgumentException("Illegal Argument passed to this method");
-        }
-
-        try (final ByteArrayInputStream bais = new ByteArrayInputStream(sourceBytes);
-             final AudioInputStream sourceAIS = AudioSystem.getAudioInputStream(bais)) {
-            final AudioFormat sourceFormat = sourceAIS.getFormat();
-            final AudioFormat convertFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED, sourceFormat.getSampleRate(), 16,
-                    sourceFormat.getChannels(), sourceFormat.getChannels() * 2, sourceFormat.getSampleRate(), false);
-            try (final AudioInputStream convert1AIS = AudioSystem.getAudioInputStream(convertFormat, sourceAIS);
-                 final AudioInputStream convert2AIS = AudioSystem.getAudioInputStream(audioFormat, convert1AIS);
-                 final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[8192];
-                while (true) {
-                    int readCount = convert2AIS.read(buffer, 0, buffer.length);
-                    if (readCount == -1) {
-                        break;
-                    }
-                    baos.write(buffer, 0, readCount);
-                }
-                return new AudioData(audioFormat, baos.toByteArray(), sourceFormat);
-            }
-        }
-    }
-
-    public static AudioData getAudioDataPcmSigned(byte[] sourceBytes) throws IOException, UnsupportedAudioFileException {
-        if (sourceBytes == null || sourceBytes.length == 0) {
-            throw new IllegalArgumentException("Illegal Argument passed to this method");
-        }
-
-        try (final ByteArrayInputStream bais = new ByteArrayInputStream(sourceBytes);
-             final AudioInputStream sourceAIS = AudioSystem.getAudioInputStream(bais)) {
-            final AudioFormat sourceFormat = sourceAIS.getFormat();
-            final AudioFormat convertFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED, sourceFormat.getSampleRate(), 16,
-                    sourceFormat.getChannels(), sourceFormat.getChannels() * 2, sourceFormat.getSampleRate(), false);
-            try (final AudioInputStream convert1AIS = AudioSystem.getAudioInputStream(convertFormat, sourceAIS);
-                 final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[8192];
-                while (true) {
-                    int readCount = convert1AIS.read(buffer, 0, buffer.length);
-                    if (readCount == -1) {
-                        break;
-                    }
-                    baos.write(buffer, 0, readCount);
-                }
-                return new AudioData(convertFormat, baos.toByteArray(), sourceFormat);
-            }
-        }
-    }
+//    public static AudioData convertAudioData(byte[] sourceBytes, AudioFormat audioFormat) throws IOException, UnsupportedAudioFileException {
+//        if (sourceBytes == null || sourceBytes.length == 0 || audioFormat == null) {
+//            throw new IllegalArgumentException("Illegal Argument passed to this method");
+//        }
+//
+//        try (final ByteArrayInputStream bais = new ByteArrayInputStream(sourceBytes);
+//             final AudioInputStream sourceAIS = AudioSystem.getAudioInputStream(bais)) {
+//            final AudioFormat sourceFormat = sourceAIS.getFormat();
+//            final AudioFormat convertFormat = new AudioFormat(
+//                    AudioFormat.Encoding.PCM_SIGNED, sourceFormat.getSampleRate(), 16,
+//                    sourceFormat.getChannels(), sourceFormat.getChannels() * 2, sourceFormat.getSampleRate(), false);
+//            try (final AudioInputStream convert1AIS = AudioSystem.getAudioInputStream(convertFormat, sourceAIS);
+//                 final AudioInputStream convert2AIS = AudioSystem.getAudioInputStream(audioFormat, convert1AIS);
+//                 final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+//                byte[] buffer = new byte[8192];
+//                while (true) {
+//                    int readCount = convert2AIS.read(buffer, 0, buffer.length);
+//                    if (readCount == -1) {
+//                        break;
+//                    }
+//                    baos.write(buffer, 0, readCount);
+//                }
+//                return new AudioData(audioFormat, baos.toByteArray(), sourceFormat);
+//            }
+//        }
+//    }
+//
+//    public static AudioData getAudioDataPcmSigned(byte[] sourceBytes) throws IOException, UnsupportedAudioFileException {
+//        if (sourceBytes == null || sourceBytes.length == 0) {
+//            throw new IllegalArgumentException("Illegal Argument passed to this method");
+//        }
+//
+//        try (final ByteArrayInputStream bais = new ByteArrayInputStream(sourceBytes);
+//             final AudioInputStream sourceAIS = AudioSystem.getAudioInputStream(bais)) {
+//            final AudioFormat sourceFormat = sourceAIS.getFormat();
+//            final AudioFormat convertFormat = new AudioFormat(
+//                    AudioFormat.Encoding.PCM_SIGNED, sourceFormat.getSampleRate(), 16,
+//                    sourceFormat.getChannels(), sourceFormat.getChannels() * 2, sourceFormat.getSampleRate(), false);
+//            try (final AudioInputStream convert1AIS = AudioSystem.getAudioInputStream(convertFormat, sourceAIS);
+//                 final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+//                byte[] buffer = new byte[8192];
+//                while (true) {
+//                    int readCount = convert1AIS.read(buffer, 0, buffer.length);
+//                    if (readCount == -1) {
+//                        break;
+//                    }
+//                    baos.write(buffer, 0, readCount);
+//                }
+//                return new AudioData(convertFormat, baos.toByteArray(), sourceFormat);
+//            }
+//        }
+//    }
 
     @Override
     public void configure() throws Exception {
+        final String naoUser = "nao";
         final String naoPassword = env.getRequiredProperty("nao.password");
         // NAO only supports limited sample rates, so we limit to 22050 Hz (default)
         final int sampleRate = 22050;
-        final int channelCount = 2;
-        final String naoUser = "nao";
+        final int channelCount = 2; // audio is usually stereo
         final AudioFormat naoFormat = new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16,
                 channelCount, channelCount * 2, sampleRate, false);
+
+        final String ffmpegExecutable = !new File("/usr/bin/ffmpeg").exists() && new File("/usr/bin/avconv").exists() ? "avconv" :
+                env.getRequiredProperty("ffmpeg.bin");
+        log.info("libav autodetection result: We will use '{}'", ffmpegExecutable);
 
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
@@ -258,13 +263,19 @@ public class AudioRouter extends RouteBuilder {
 //                            log.info("Played uploaded file locally: {}", destFile);
 
                             // using remotebuffer
-                            final AudioData naoSound = convertAudioData(dataUri.getData(), naoFormat);
+                            // IllegalArgumentException: Unsupported conversion: PCM_SIGNED 16000.0 Hz, 16 bit, mono, 2 bytes/frame, little-endian from VORBISENC 16000.0 Hz, unknown bits per sample, mono, 1 bytes/frame, 6000.0 frames/second,
+                            // at javax.sound.sampled.AudioSystem.getAudioInputStream(AudioSystem.java:974) ~[na:1.8.0_66]
+                            //final AudioData naoSound = convertAudioData(dataUri.getData(), naoFormat);
+                            // convert everything to PCM_SIGNED 16000 Hz mono 16-bit, unless already
+                            final AudioData naoSound = convertAudioDataUsingFfmpeg(ffmpegExecutable,
+                                    dataUri.getData(), naoFormat);
+
                             final Variant fStereoAudioData = new Variant(naoSound.getData());
                             final int frameCount = naoSound.getData().length / naoSound.getFormat().getFrameSize();
                             log.info("Playing converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
                                     dataUri.getData().length, naoSound.getData().length,
                                     frameCount, naoSound.getSourceFormat());
-//                            audioDevice.setParameter("outputSampleRate", (int) naoSound.getFormat().getSampleRate());
+                            audioDevice.setParameter("outputSampleRate", (int) naoSound.getFormat().getSampleRate());
                             audioDevice.sendRemoteBufferToOutput(frameCount, fStereoAudioData);
                             log.info("Played converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
                                     dataUri.getData().length, naoSound.getData().length,
@@ -277,5 +288,37 @@ public class AudioRouter extends RouteBuilder {
                         exchange.getOut().setBody(null);
                     }
                 }).bean(toJson);
+    }
+
+    protected AudioData convertAudioDataUsingFfmpeg(String ffmpegExecutable,
+                                                    byte[] data, AudioFormat naoFormat) throws IOException {
+        try (final ByteArrayInputStream customIn = new ByteArrayInputStream(data);
+             final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             final ByteArrayOutputStream err = new ByteArrayOutputStream()) {
+            // flac.exe doesn't support mp3, and that's a problem for now (note: mp3 patent is expiring)
+            final CommandLine cmdLine = new CommandLine(ffmpegExecutable);
+            cmdLine.addArgument("-i");
+            cmdLine.addArgument("-"); //cmdLine.addArgument(wavFile.toString());
+            cmdLine.addArgument("-ar");
+            cmdLine.addArgument(String.valueOf((int) naoFormat.getSampleRate()));
+            cmdLine.addArgument("-ac");
+            cmdLine.addArgument(String.valueOf(naoFormat.getChannels()));
+            cmdLine.addArgument("-f");
+            cmdLine.addArgument("s16le"); // -acodec pcm_s16le
+//            cmdLine.addArgument("-acodec");
+//            cmdLine.addArgument("pcm_s16le"); // -acodec pcm_s16le
+//                                cmdLine.addArgument("-y"); // happens, weird!
+//                                cmdLine.addArgument(oggFile.toString());
+            cmdLine.addArgument("-");
+            executor.setStreamHandler(new PumpStreamHandler(bos, err, customIn));
+            final int executed;
+            try {
+                executed = executor.execute(cmdLine);
+            } finally {
+                log.info("{}: {}", cmdLine, err.toString());
+            }
+
+            return new AudioData(naoFormat, bos.toByteArray(), null);
+        }
     }
 }
