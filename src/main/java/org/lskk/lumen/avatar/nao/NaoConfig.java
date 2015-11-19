@@ -1,7 +1,6 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.*;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
@@ -103,6 +102,7 @@ public class NaoConfig {
             final boolean restAtInit = env.getProperty("nao.motion.rest-at-init", Boolean.class, true);
             if (restAtInit) {
                 log.info("Resting NAO...");
+                motionProxy.killAll();
                 motionProxy.rest();
             }
             return motionProxy;
