@@ -184,4 +184,14 @@ public class NaoConfig {
         }
     }
 
+    @Bean
+    public ALBatteryProxy batteryProxy() throws IOException{
+        try {
+            log.info("Initializing Batteries at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALBatteryProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO Batteries at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
 }
