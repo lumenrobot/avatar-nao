@@ -177,12 +177,12 @@ public class NaoConfig {
     @Bean
     public ALLedsProxy ledsProxy() throws IOException {
         try {
-            log.info("Initializing LEDs at {}:{}...", getNaoHost(), getNaoPort());
+            log.info("Initializing    LEDs at {}:{}...", getNaoHost(), getNaoPort());
             return new ALLedsProxy(getNaoHost(), getNaoPort());
-        } catch (Exception e) {
-            throw new IOException("Cannot connect NAO LEDs at " + getNaoHost() + ":" + getNaoPort(), e);
+} catch (Exception e) {
+        throw new IOException("Cannot connect NAO LEDs at " + getNaoHost() + ":" + getNaoPort(), e);
         }
-    }
+        }
 
     @Bean
     public ALBatteryProxy batteryProxy() throws IOException{
@@ -193,5 +193,16 @@ public class NaoConfig {
             throw new IOException("Cannot connect NAO Batteries at " + getNaoHost() + ":" + getNaoPort(), e);
         }
     }
+
+    @Bean
+    public ALSonarProxy sonarProxy() throws IOException{
+        try {
+            log.info("Initializing Sonar at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALSonarProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO Sonar at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
 
 }
