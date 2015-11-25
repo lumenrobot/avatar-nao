@@ -51,7 +51,7 @@ public class CameraStreamRouter extends RouteBuilder {
      * @param topImg
      * @return
      */
-    protected byte[] yuv422ToJpg(byte[] topImg) {
+    protected byte[] yuv422ToJpg(String name, byte[] topImg) {
         // http://study.marearts.com/2014/12/yuyv-to-rgb-and-rgb-to-yuyv-using.html
         final byte[] topBytes;
         final BytePointer topPtr = new BytePointer(topImg);
@@ -64,8 +64,8 @@ public class CameraStreamRouter extends RouteBuilder {
         final opencv_core.Mat bgrMat;
         try {
             //yuv422Mat.asByteBuffer().limit(topImg.length);
-            log.trace("Input is {} bytes, yuv422Mat: limit={} capacity={} {}",
-                    topImg.length, yuv422Mat.ptr().limit(), yuv422Mat.ptr().capacity(), yuv422Mat);
+            log.trace("Input '{}' is {} bytes, yuv422Mat: limit={} capacity={} {}",
+                    name, topImg.length, yuv422Mat.ptr().limit(), yuv422Mat.ptr().capacity(), yuv422Mat);
 //            Preconditions.checkState(topImg.length == yuv422Mat.asByteBuffer().limit(),
 //                    "Input is %s bytes, but yuv422Mat is %s bytes %s",
 //                    topImg.length, yuv422Mat.asByteBuffer().limit(), yuv422Mat);
@@ -77,18 +77,22 @@ public class CameraStreamRouter extends RouteBuilder {
                 final BytePointer bufPtr = new BytePointer();
                 try {
                     opencv_highgui.imencode(".jpg", bgrMat, bufPtr);
-                    log.trace("JPEG Image: {} bytes", bufPtr.capacity());
+                    log.trace("JPEG '{}' Image: {} bytes", name, bufPtr.capacity());
                     topBytes = new byte[bufPtr.capacity()];
                     bufPtr.get(topBytes);
                     return topBytes;
                 } finally {
+                    log.trace("Deallocating bufPtr '{}'", name);
                     bufPtr.deallocate();
+                    log.trace("Deallocated bufPtr '{}'", name);
                 }
             } finally {
                 bgrMat.release();
+                log.trace("Released bgrMat '{}'", name);
             }
         } finally {
             yuv422Mat.release();
+            log.trace("Released yuv422Mat '{}'", name);
         }
     }
 
@@ -138,7 +142,7 @@ public class CameraStreamRouter extends RouteBuilder {
                         HexDump.dump(topYuv422, 0, bos, 0);
                         log.trace("{}", bos);
                     }
-                    final byte[] topJpg = yuv422ToJpg(topYuv422);
+                    final byte[] topJpg = yuv422ToJpg("top", topYuv422);
 
                     final ImageObject topImageObject = new ImageObject();
                     topImageObject.setDateCreated(new DateTime(DateTimeZone.forID("Asia/Jakarta")));
@@ -148,6 +152,7 @@ public class CameraStreamRouter extends RouteBuilder {
                             Base64.encodeBase64String(topJpg));
 
 //                        exchange.getIn().setBody(topImageObject);
+                    log.trace("Sending {} {}", "top", topImageObject);
                     producer.sendBody(
                             "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.main",
                             toJson.apply(topImageObject));
@@ -158,7 +163,7 @@ public class CameraStreamRouter extends RouteBuilder {
                         HexDump.dump(bottomYuv422, 0, bos, 0);
                         log.trace("{}", bos);
                     }
-                    final byte[] bottomJpg = yuv422ToJpg(bottomYuv422);
+                    final byte[] bottomJpg = yuv422ToJpg("top", bottomYuv422);
 
                     final ImageObject bottomImageObject = new ImageObject();
                     bottomImageObject.setDateCreated(new DateTime(DateTimeZone.forID("Asia/Jakarta")));
@@ -166,12 +171,14 @@ public class CameraStreamRouter extends RouteBuilder {
                     bottomImageObject.setContentSize((long) bottomJpg.length);
                     bottomImageObject.setContentUrl("data:image/jpeg;base64," +
                             Base64.encodeBase64String(bottomJpg));
+
                     //exchange.getIn().setBody(bottomImageObject);
+                    log.trace("Sending {} {}", "bottom", bottomImageObject);
                     producer.sendBody(
                             "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.bottom",
                             toJson.apply(bottomImageObject));
 
-                    log.trace("Sent JPG {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
+                    log.trace("Sent JPGs {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
                             NaoVideoConfig.GVM_BOTTOM_ID, bottomJpg.length);
 
                 });
