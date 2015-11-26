@@ -6,11 +6,13 @@ import com.google.common.base.Preconditions;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.rabbitmq.RabbitMQConstants;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.HexDump;
 import org.bytedeco.javacpp.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.lskk.lumen.core.AvatarChannel;
 import org.lskk.lumen.core.ImageObject;
 import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
@@ -108,6 +110,7 @@ public class CameraStreamRouter extends RouteBuilder {
         log.info("Cameras capture timer with period = {}ms", period);
         // RuntimeException: No native JavaCPP library in memory. (Has Loader.load() been called?) - https://github.com/bytedeco/javacpp/issues/44
         Loader.load(opencv_core.class);
+        final String avatarId = "nao1";
         from("timer:camera?period=" + period)
                 .process(exchange -> {
                     final byte[] topYuv422;
@@ -141,11 +144,12 @@ public class CameraStreamRouter extends RouteBuilder {
                             NaoVideoConfig.GVM_BOTTOM_ID, bottomId, bottomYuv422.length);
 
                     // process TOP Image
-                    if (log.isTraceEnabled()) {
-                        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        HexDump.dump(topYuv422, 0, bos, 0);
-                        log.trace("{}", bos);
-                    }
+//                    if (log.isTraceEnabled()) {
+//                        try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+//                            HexDump.dump(topYuv422, 0, bos, 0);
+//                            log.trace("YUV422: {}", bos);
+//                        }
+//                    }
                     final byte[] topJpg = yuv422ToJpg("top", topYuv422);
 
                     final ImageObject topImageObject = new ImageObject();
@@ -156,22 +160,23 @@ public class CameraStreamRouter extends RouteBuilder {
                             Base64.encodeBase64String(topJpg));
 
 //                        exchange.getIn().setBody(topImageObject);
-                    log.trace("Sending {} {}", "top", topImageObject);
-                    final Future<Object> topFuture = producer.asyncSendBody(
-                            "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.main",
-                            toJson.apply(topImageObject));
-                    try {
-                        topFuture.get(5, TimeUnit.SECONDS);
-                    } catch (Exception e) {
-                        log.error("Cannot send top " + topImageObject, e);
-                    }
+//                    log.trace("Sending {} {}", "top", topImageObject);
+//                    final Future<Object> topFuture = producer.asyncSendBody(
+//                            "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.main",
+//                            toJson.apply(topImageObject));
+//                    try {
+//                        topFuture.get(5, TimeUnit.SECONDS);
+//                    } catch (Exception e) {
+//                        log.error("Cannot send top " + topImageObject, e);
+//                    }
 
                     // process BOTTOM Image
-                    if (log.isTraceEnabled()) {
-                        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        HexDump.dump(bottomYuv422, 0, bos, 0);
-                        log.trace("{}", bos);
-                    }
+//                    if (log.isTraceEnabled()) {
+//                        try (final ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+//                            HexDump.dump(bottomYuv422, 0, bos, 0);
+//                            log.trace("YUV422: {}", bos);
+//                        }
+//                    }
                     final byte[] bottomJpg = yuv422ToJpg("top", bottomYuv422);
 
                     final ImageObject bottomImageObject = new ImageObject();
@@ -182,20 +187,28 @@ public class CameraStreamRouter extends RouteBuilder {
                             Base64.encodeBase64String(bottomJpg));
 
                     //exchange.getIn().setBody(bottomImageObject);
-                    log.trace("Sending {} {}", "bottom", bottomImageObject);
-                    final Future<Object> bottomFuture = producer.asyncSendBody(
-                            "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.bottom",
-                            toJson.apply(bottomImageObject));
-                    try {
-                        bottomFuture.get(5, TimeUnit.SECONDS);
-                    } catch (Exception e) {
-                        log.error("Cannot send bottom " + bottomImageObject, e);
-                    }
+//                    log.trace("Sending {} {}", "bottom", bottomImageObject);
+//                    final Future<Object> bottomFuture = producer.asyncSendBody(
+//                            "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.bottom",
+//                            toJson.apply(bottomImageObject));
+//                    try {
+//                        bottomFuture.get(5, TimeUnit.SECONDS);
+//                    } catch (Exception e) {
+//                        log.error("Cannot send bottom " + bottomImageObject, e);
+//                    }
 
-                    log.trace("Sent JPGs {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
-                            NaoVideoConfig.GVM_BOTTOM_ID, bottomJpg.length);
+//                    log.trace("Sent JPGs {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
+//                            NaoVideoConfig.GVM_BOTTOM_ID, bottomJpg.length);
 
-                });
+                    topImageObject.setDestinationTopic(AvatarChannel.CAMERA_MAIN.key(avatarId));
+                    bottomImageObject.setDestinationTopic(AvatarChannel.CAMERA_BOTTOM.key(avatarId));
+                    exchange.getOut().setBody(new ImageObject[] { topImageObject, bottomImageObject });
+                })
+                .split(body()).parallelProcessing()
+                .setHeader(RabbitMQConstants.ROUTING_KEY, simple("${body.destinationTopic}"))
+                .bean(toJson)
+                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=DUMMY")
+                .to("log:" + CameraStreamRouter.class.getName() + "/" + avatarId + "?level=DEBUG&showHeaders=true&showProperties=true&showBody=false&multiline=false"); // &showAll=true
 //                .bean(toJson)
 //                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.main");
         //.to("log:OUT.avatar.nao1.camera.main?showHeaders=true&showAll=true&multiline=true");

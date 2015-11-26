@@ -5,7 +5,7 @@
     <logger name="com.soluvas" level="DEBUG"/>
     <logger name="id" level="DEBUG"/>
     <logger name="org.lskk" level="DEBUG"/>
-	<logger name="org.lskk.lumen.avatar.nao.CameraStreamRouter" level="TRACE"/>
+	<!--<logger name="org.lskk.lumen.avatar.nao.CameraStreamRouter" level="TRACE"/>-->
     <logger name="org.apache.camel" level="INFO"/>
     <logger name="org.hibernate.SQL" level="INFO"/>
     <logger name="org.springframework.web.servlet.mvc.method.annotation" level="DEBUG"/>
