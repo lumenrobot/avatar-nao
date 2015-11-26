@@ -22,6 +22,10 @@ import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by ceefour on 10/2/15.
@@ -153,9 +157,14 @@ public class CameraStreamRouter extends RouteBuilder {
 
 //                        exchange.getIn().setBody(topImageObject);
                     log.trace("Sending {} {}", "top", topImageObject);
-                    producer.sendBody(
+                    final Future<Object> topFuture = producer.asyncSendBody(
                             "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.main",
                             toJson.apply(topImageObject));
+                    try {
+                        topFuture.get(5, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        log.error("Cannot send top " + topImageObject, e);
+                    }
 
                     // process BOTTOM Image
                     if (log.isTraceEnabled()) {
@@ -174,9 +183,14 @@ public class CameraStreamRouter extends RouteBuilder {
 
                     //exchange.getIn().setBody(bottomImageObject);
                     log.trace("Sending {} {}", "bottom", bottomImageObject);
-                    producer.sendBody(
+                    final Future<Object> bottomFuture = producer.asyncSendBody(
                             "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.bottom",
                             toJson.apply(bottomImageObject));
+                    try {
+                        bottomFuture.get(5, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        log.error("Cannot send bottom " + bottomImageObject, e);
+                    }
 
                     log.trace("Sent JPGs {}={} bytes {}={} bytes", NaoVideoConfig.GVM_TOP_ID, topJpg.length,
                             NaoVideoConfig.GVM_BOTTOM_ID, bottomJpg.length);
