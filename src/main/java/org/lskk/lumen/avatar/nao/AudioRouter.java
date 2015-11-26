@@ -216,7 +216,7 @@ public class AudioRouter extends RouteBuilder {
                         audioObject.setContentUrl("data:" + recordingMimeType + ";base64," +
                                 Base64.encodeBase64String(rawData));
 
-                        final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.in";
+                        final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar.nao1.audio.in";
                         producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
                         log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
 
