@@ -47,7 +47,7 @@ public class BatteryRouter extends RouteBuilder {
                     exchange.getIn().setBody(batteryState);
                 })
                 .bean(toJson)
-                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar." + avatarId + ".data.battery");
+                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&skipQueueDeclare=true&autoDelete=false&routingKey=avatar." + avatarId + ".data.battery");
                 //.to("log:battery?showAll=true&multiline=true");
     }
 }

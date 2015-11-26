@@ -44,8 +44,9 @@ public class CommandRouter extends RouteBuilder {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
         // avatar.*.command
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.command")
-                .to("log:IN.avatar.nao*.command?showHeaders=true&showAll=true&multiline=true")
+        final String avatarId = "nao1";
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + AvatarChannel.COMMAND.key(avatarId) + "&routingKey=" + AvatarChannel.COMMAND.key(avatarId))
+                .to("log:IN." + AvatarChannel.COMMAND.key(avatarId) + "?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                                 exchange.getIn().getBody(byte[].class), LumenThing.class);

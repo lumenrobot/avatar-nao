@@ -164,8 +164,9 @@ public class AudioRouter extends RouteBuilder {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
         // audio
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio&concurrentConsumers=4")
-                .to("log:IN.avatar.nao1.audio?showHeaders=true&showAll=true&multiline=true")
+        final String avatarId = "nao1";
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + AvatarChannel.AUDIO.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO.key(avatarId))
+                .to("log:IN." + AvatarChannel.AUDIO.key(avatarId) + "?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                             exchange.getIn().getBody(byte[].class), LumenThing.class);
@@ -224,9 +225,10 @@ public class AudioRouter extends RouteBuilder {
                         exchange.getOut().setBody(null);
                     }
                 }).bean(toJson);
+
         // audio.out
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.audio.out")
-                .to("log:IN.avatar.nao1.audio.out?showHeaders=true&showAll=true&multiline=true")
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + AvatarChannel.AUDIO_OUT.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO_OUT.key(avatarId))
+                .to("log:IN.avatar." + avatarId + ".audio.out?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                             exchange.getIn().getBody(byte[].class), LumenThing.class);

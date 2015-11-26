@@ -4,10 +4,7 @@ import com.aldebaran.proxy.ALLedsProxy;
 import javafx.scene.paint.Color;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
-import org.lskk.lumen.core.LedOperation;
-import org.lskk.lumen.core.LedOperationKind;
-import org.lskk.lumen.core.LumenThing;
-import org.lskk.lumen.core.Status;
+import org.lskk.lumen.core.*;
 import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +31,9 @@ public class LedsRouter extends RouteBuilder {
     public void configure() throws Exception {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.leds&concurrentConsumers=4")
-                .to("log:IN.avatar.nao1.leds?showHeaders=true&showAll=true&multiline=true")
+        final String avatarId = "nao1";
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + AvatarChannel.LEDS.key(avatarId) + "&routingKey=" + AvatarChannel.LEDS.key(avatarId))
+                .to("log:IN." + AvatarChannel.LEDS.key(avatarId) + "?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(exchange.getIn().getBody(byte[].class), LumenThing.class);
                     log.info("Got LED command: {}", thing);
