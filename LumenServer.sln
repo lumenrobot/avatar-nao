@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumenServer", "LumenServer\LumenServer.csproj", "{FB6003EB-DA19-46E3-A8CF-44D3956E8F04}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumenAPI", "LumenAPI\LumenAPI.csproj", "{3C2A0737-377F-46BA-A74B-5663752FDA4A}"
@@ -12,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{609D870F-AACD-43A0-BF55-680EA3D0CAAC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "streaming", "streaming\streaming.csproj", "{80F92802-D68C-4F11-8F38-65D272B780C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "scanningmotion", "scanningmotion\scanningmotion.csproj", "{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +87,18 @@ Global
 		{80F92802-D68C-4F11-8F38-65D272B780C1}.Release|Mixed Platforms.Build.0 = Release|x86
 		{80F92802-D68C-4F11-8F38-65D272B780C1}.Release|x86.ActiveCfg = Release|x86
 		{80F92802-D68C-4F11-8F38-65D272B780C1}.Release|x86.Build.0 = Release|x86
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Debug|x86.Build.0 = Debug|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Release|x86.ActiveCfg = Release|Any CPU
+		{E0EC1976-5C97-4205-9BED-41BDEF5D2FBD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
