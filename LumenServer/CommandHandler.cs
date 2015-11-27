@@ -19,7 +19,6 @@ using System.IO;
 using System.Timers;
 using System.Diagnostics;
 
-
 namespace LumenServer
 {
     class CommandHandler
@@ -29,6 +28,8 @@ namespace LumenServer
         private QueueingBasicConsumer consumer;
         BasicDeliverEventArgs basicEvent;
         MotionProxy motion;
+        MemoryProxy memory;
+        SonarProxy sonar;
         RobotPostureProxy posture;
         TextToSpeechProxy tts;
         AudioDeviceProxy audio;
@@ -46,7 +47,7 @@ namespace LumenServer
             
             channelSend = Program.connection.CreateModel();//buat recording
             QueueDeclareOk channelQueue = channel.QueueDeclare("", true, false, true, null);
-            string channelKey = "avatar.nao1.command";   
+            string channelKey = "avatar.NAO.command";   
             channel.QueueBind(channelQueue.QueueName, "amq.topic", channelKey);
             consumer = new QueueingBasicConsumer(channel);
             channel.BasicConsume(channelQueue, false, consumer);
@@ -71,6 +72,8 @@ namespace LumenServer
             
             audioRecording = new AudioRecorderProxy(Program.naoIP, 9559);
             audioPlayer = new AudioPlayerProxy(Program.naoIP, 9559);
+            sonar = new SonarProxy(Program.naoIP, 9559);
+            memory = new MemoryProxy(Program.naoIP, 9559);
             handler = new Thread(commandHandling);
             handler.Start();
             Console.WriteLine("Ready to handle command!");
@@ -91,6 +94,8 @@ namespace LumenServer
         {
             while (true)
             {
+                
+                
                 BasicDeliverEventArgs basicEvent = (BasicDeliverEventArgs)consumer.Queue.Dequeue();
 
                 var propertiesReceived = basicEvent.BasicProperties;
@@ -115,6 +120,9 @@ namespace LumenServer
                         case "audiodevice":
                             audioDeviceHandling(command);
                             break;
+                        case "sonardevice":
+                            sonarHandling(command);
+                            break;
                         default:
                             Console.WriteLine(command.type);
                             break;
@@ -126,13 +134,19 @@ namespace LumenServer
                 }
                 finally
                 {
-                   var responseByte = Encoding.UTF8.GetBytes("command finished");
-                    propertiesReplied.CorrelationId = propertiesReceived.CorrelationId;
-                    Console.WriteLine("send back acknowledgment corrId={0} to {1}", propertiesReceived.CorrelationId, propertiesReceived.ReplyTo);
-                    channel.BasicPublish("", propertiesReceived.ReplyTo, propertiesReplied, responseByte);
-                    channel.BasicAck(basicEvent.DeliveryTag, false);    
-                    Console.WriteLine("acknowledgment sent");
-                    //subs.Ack(basicEvent);
+                    try
+                    {
+                        var responseByte = Encoding.UTF8.GetBytes("command finished");
+                        propertiesReplied.CorrelationId = propertiesReceived.CorrelationId;
+                        Console.WriteLine("send back acknowledgment corrId={0} to {1}", propertiesReceived.CorrelationId, propertiesReceived.ReplyTo);
+                        channel.BasicPublish("", propertiesReceived.ReplyTo, propertiesReplied, responseByte);
+                        channel.BasicAck(basicEvent.DeliveryTag, false);
+                        Console.WriteLine("acknowledgment sent");
+                        //subs.Ack(basicEvent);
+                    }
+                    catch
+                    {
+                    }
                 }
                 
             }
@@ -163,7 +177,7 @@ namespace LumenServer
                     break;
                 case "setstiffnesses":
                     Console.WriteLine("executing motion.setStiffnesses()");
-                    motion.setStiffnesses(new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.stiffnessess));
+                    motion.setStiffnesses (new ArrayList(newCommand.parameter.jointName), new ArrayList(newCommand.parameter.stiffnessess));
                     Console.WriteLine("execution motion.setStiffnesses() finished");
                     break;
                 case "closehand":
@@ -186,41 +200,63 @@ namespace LumenServer
                     motion.moveTo(newCommand.parameter.x, newCommand.parameter.y, newCommand.parameter.tetha);
                     Console.WriteLine("execution motion.moveto() finished");
                     break;
+
                 case "setwalkarmsenabled":
                     Console.WriteLine("executing motion.setwalkarmsenabled()");
                     motion.setWalkArmsEnabled(newCommand.parameter.LHand, newCommand.parameter.RHand);
                     Console.WriteLine("execution motion.setwalkarmsenabled() finished");
                     break;
+
                 case "goodbye":
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" ,"RHand"}, 
-                        new List<float>() { -0.9f, -0.44f, 0.53f, 0.3f, -0.2f,1.0f }, 0.5f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" ,"RHand"}, new List<float>() { -0.9f, -0.44f, 0.53f, 0.3f, -0.2f,1.0f }, 0.5f);
                     Thread.Sleep(500);
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                        new List<float>() { -0.9f, -0.44f, 0.53f, 1.2f, -0.2f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { -0.9f, -0.44f, 0.53f, 1.2f, -0.2f }, 0.2f);
                     Thread.Sleep(1000);
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                        new List<float>() { -0.9f, -0.44f, 0.53f, 0.3f, -0.2f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { -0.9f, -0.44f, 0.53f, 0.3f, -0.2f }, 0.2f);
                     Thread.Sleep(1000);
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                        new List<float>() { -0.9f, -0.44f, 0.53f, 1.2f, -0.2f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { -0.9f, -0.44f, 0.53f, 1.2f, -0.2f }, 0.2f);
                     Thread.Sleep(1000);
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw","RHand" }, 
-                        new List<float>() { -0.9f, -0.44f, 0.53f, 0.3f, -0.2f,1.0f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw","RHand" }, new List<float>() { -0.9f, -0.44f, 0.53f, 0.3f, -0.2f,1.0f }, 0.2f);
                     Thread.Sleep(1000);
                     break;
                 case "photopose":
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                        new List<float>() { 1.12f, 0.31f, 0.34f, 1.25f, -0.1f }, 0.2f);
-                    motion.setAngles(
-                        new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, 
-                        new List<float>() { -0.9f, 0.71f, -0.79f, -0.88f, 0.42f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { 1.12f, 0.31f, 0.34f, 1.25f, -0.1f }, 0.2f);
+                    motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, new List<float>() { -0.9f, 0.71f, -0.79f, -0.88f, 0.42f }, 0.2f);
                     motion.openHand("LHand");
+                    break;
+                case "angkat":
+                     motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll","LElbowYaw","LElbowRoll","LWristYaw" }, new List<float>() { 1.1f, -0.2f,-1.5f,-1.5f,-1.4f }, 0.2f);
+            motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll","RElbowYaw","RElbowRoll","RWristYaw" }, new List<float>() { 1.1f, 0.1f,1.4f,1.5f,1.4f }, 0.2f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kasih":
+                    motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, new List<float>() { 0.3f, -0.2f, -1.5f, -0.7f, -0.3f }, 0.2f);
+            motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { 0.2f, 0.3f, 1.5f, 0.4f, 1.4f }, 0.2f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kepala":
+                    motion.setAngles(new List<string>() { "HeadPitch" }, new List<float>() { -0.36f }, 0.2f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kepala1":
+                    motion.setAngles(new List<string>() { "HeadYaw" }, new List<float>() { 0.5f }, 0.1f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kepala2":
+                    motion.setAngles(new List<string>() { "HeadYaw" }, new List<float>() { 0.9f }, 0.1f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kepala3":
+                    motion.setAngles(new List<string>() { "HeadYaw" }, new List<float>() { 0.06f }, 0.1f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kepala4":
+                    motion.setAngles(new List<string>() { "HeadYaw" }, new List<float>() { -0.6f }, 0.1f);
+                    //motion.openHand("LHand");
+                    break;
+                case "kepala5":
+                    motion.setAngles(new List<string>() { "HeadYaw" }, new List<float>() { -1.0f }, 0.1f);
+                    //motion.openHand("LHand");
                     break;
                 case "dance":
                     Console.WriteLine("start music");
@@ -229,43 +265,25 @@ namespace LumenServer
                     {
                         audioPlayer.playFile("/home/nao/gangnam.mp3");
                     }).Start();
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                        new List<float>() { 1.28f, 0.18f, 0.71f, 0.71f, -0.7f }, 0.2f);
-                    motion.setAngles(
-                        new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, 
-                        new List<float>() { -0.72f, 0.04f, -0.67f, -1.06f, 0.97f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { 1.28f, 0.18f, 0.71f, 0.71f, -0.7f }, 0.2f);
+                    motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, new List<float>() { -0.72f, 0.04f, -0.67f, -1.06f, 0.97f }, 0.2f);
                     for (int i = 0; i < 6; i++)
                     {
-                        motion.setAngles(
-                            new List<string>() { "HeadPitch", "RShoulderPitch", "LShoulderPitch" }, 
-                            new List<float>() { 0.0f, 1.28f, -0.72f }, 0.3f);
+                        motion.setAngles(new List<string>() { "HeadPitch", "RShoulderPitch", "LShoulderPitch" }, new List<float>() { 0.0f, 1.28f, -0.72f }, 0.3f);
                         Thread.Sleep(500);
-                        motion.setAngles(
-                            new List<string>() { "HeadPitch", "RShoulderPitch", "LShoulderPitch" }, 
-                            new List<float>() { 0.51f, 1.10f, -0.60f }, 0.3f);
+                        motion.setAngles(new List<string>() { "HeadPitch", "RShoulderPitch", "LShoulderPitch" }, new List<float>() { 0.51f, 1.10f, -0.60f }, 0.3f);
                         Thread.Sleep(500);
                     }
-                    motion.setAngles(
-                        new List<string>() { "HeadPitch", "RShoulderPitch", "LShoulderPitch" }, 
-                        new List<float>() { 0.0f, 1.28f, -0.72f }, 0.3f);
+                    motion.setAngles(new List<string>() { "HeadPitch", "RShoulderPitch", "LShoulderPitch" }, new List<float>() { 0.0f, 1.28f, -0.72f }, 0.3f);
                     Thread.Sleep(500);
-                    motion.setAngles(
-                        new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                        new List<float>() { -1.28f, -0.22f, -0.13f, 1.1f, 0.2f }, 0.2f);
-                    motion.setAngles(
-                        new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, 
-                        new List<float>() { 1.28f, -0.31f, -0.46f, -0.59f, 0.62f }, 0.2f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { -1.28f, -0.22f, -0.13f, 1.1f, 0.2f }, 0.2f);
+                    motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, new List<float>() { 1.28f, -0.31f, -0.46f, -0.59f, 0.62f }, 0.2f);
                     
                     for (int i = 0; i < 7; i++)
                     {
-                        motion.setAngles(
-                            new List<string>() { "HeadYaw", "RShoulderRoll", "LShoulderRoll" }, 
-                            new List<float>() { 0.0f, -0.22f, -0.31f }, 0.2f);
+                        motion.setAngles(new List<string>() { "HeadYaw", "RShoulderRoll", "LShoulderRoll" }, new List<float>() { 0.0f, -0.22f, -0.31f }, 0.2f);
                         Thread.Sleep(500);
-                        motion.setAngles(
-                            new List<string>() { "HeadYaw", "RShoulderRoll", "LShoulderRoll" }, 
-                            new List<float>() { 0.51f, -0.73f, 0.78f }, 0.3f);
+                        motion.setAngles(new List<string>() { "HeadYaw", "RShoulderRoll", "LShoulderRoll" }, new List<float>() { 0.51f, -0.73f, 0.78f }, 0.3f);
                         Thread.Sleep(500);
                     }
                     posture.goToPosture("Stand", 0.5f);
@@ -273,53 +291,21 @@ namespace LumenServer
 
                 case "sing":
                     Console.WriteLine("Start singing");
-                    Random ran = new Random();
-                    //int select = ran.Next(1, 2);
-                    int select = 1;
-                    if (select == 1)
+                    new Thread(delegate()
                     {
-                        new Thread(delegate()
-                        {
-                            audioPlayer.playFile("/home/nao/manuk.mp3");
-                        }).Start();
-                        Thread.Sleep(15000);
-                        posture.goToPosture("StandInit", 0.5f);
-                        motion.setAngles(
-                            new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                            new List<float>() { 0.19f, 0.05f, 0.54f, 1.54f, 0.16f }, 0.2f);
-                        for (int i = 0; i < 9; i++)
-                        {
-                            motion.setAngles(
-                                new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, 
-                                new List<float>() { -0.93f, 0.01f, -0.73f, -0.47f, 0.26f }, 0.1f);
-                            Thread.Sleep(1500);
-                            motion.setAngles(
-                                new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, 
-                                new List<float>() { -0.89f, 0.36f, -0.74f, -0.05f, 0.26f }, 0.1f);
-                            Thread.Sleep(1500);
-                        }
-                        posture.goToPosture("Stand", 0.5f);
-                    }
-                    else if (select == 2)
+                        audioPlayer.playFile("/home/nao/manuk.mp3");
+                    }).Start();
+                    Thread.Sleep(15000);
+                    posture.goToPosture("StandInit", 0.5f);
+                    motion.setAngles(new List<string>() { "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, new List<float>() { 0.19f, 0.05f, 0.54f, 1.54f, 0.16f }, 0.2f);
+                    for (int i = 0; i < 9; i++)
                     {
-                        posture.goToPosture("StandInit", 0.5f);
-                        new Thread(delegate()
-                        {
-                            audioPlayer.playFile("/home/nao/uptown.mp3");
-                        }).Start();
-                        for (int i =0;i<=10;i++){
-                            motion.setAngles(
-                                new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw", "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                                new List<float>() { 0.87f, -0.03f, -1.4f, -1.23f, 0.05f, 0.63f, -0.07f, 1.08f, 0.88f, 0.37f }, 0.3f);
-		                    Thread.Sleep(500);
-                            motion.setAngles(
-                                new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw", "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw" }, 
-                                new List<float>() { 0.89f, -0.26f, -0.99f, -1.24f, 0.06f, 0.63f, 0.26f, 0.95f, 0.87f, 0.37f }, 0.4f);
-		                    Thread.Sleep(500);
-                        }
-
+                        motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, new List<float>() { -0.93f, 0.01f, -0.73f, -0.47f, 0.26f }, 0.1f);
+                        Thread.Sleep(1500);
+                        motion.setAngles(new List<string>() { "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw" }, new List<float>() { -0.89f, 0.36f, -0.74f, -0.05f, 0.26f }, 0.1f);
+                        Thread.Sleep(1500);
                     }
-                    
+                    posture.goToPosture("Stand", 0.5f);
                     break;
                 default:
                     Console.WriteLine(newCommand.method);
@@ -342,6 +328,15 @@ namespace LumenServer
                     Console.WriteLine("execution posture.stopmove() finished");
                     break;
 
+            }
+        }
+        private void sonarHandling(Command newCommand)
+        {
+            switch (newCommand.method.ToLower())
+            {
+                case "rightsonar":
+                    Console.WriteLine(memory.getData("Device/SubDeviceList/US/Right/Sensor/Value"));
+                    break;
             }
         }
         private void ttsHandling(Command newCommand)
@@ -425,7 +420,7 @@ namespace LumenServer
                     string stringToSend = JsonConvert.SerializeObject(dataToSend);
                     byte[] bufferToSend = Encoding.UTF8.GetBytes(stringToSend);
                     
-                    channelSend.BasicPublish("amq.topic", "avatar.nao1.audio.in", null, bufferToSend);
+                    channelSend.BasicPublish("amq.topic", "avatar.NAO.data.recording", null, bufferToSend);
                     Console.WriteLine("execution audioDevice.record() finished");
                     break;
             }

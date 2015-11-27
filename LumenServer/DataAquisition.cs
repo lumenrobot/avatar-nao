@@ -43,7 +43,7 @@ namespace LumenServer
             //jointThread.Start();
             imageThread.Start();
             //batteryThread.Start();
-            //sonarThread.Start();
+            sonarThread.Start();
             //tactileThread.Start();
             imageReady = true;
             jointReady = true;

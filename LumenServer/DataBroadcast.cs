@@ -51,7 +51,7 @@ namespace LumenServer
             //start all thread
             imageThread.Start();
             //jointThread.Start();
-            //sonarThread.Start();
+            sonarThread.Start();
             //tactileThread.Start();
             //batteryThread.Start(); 
             //if (connectionCheck.IsAlive == false)
@@ -87,11 +87,11 @@ namespace LumenServer
             sonarChannel = Program.connection.CreateModel();
             batteryChannel = Program.connection.CreateModel();
 
-            imageKey = "avatar.nao1.camera.main";
-            jointKey = "avatar.nao1.data.joint";
-            sonarKey = "avatar.nao1.data.sonar";
-            tactileKey = "avatar.nao1.data.tactile";
-            batteryKey = "avatar.nao1.data.battery";
+            imageKey = "avatar.NAO.data.image";
+            jointKey = "avatar.NAO.data.joint";
+            sonarKey = "avatar.NAO.data.sonar";
+            tactileKey = "avatar.NAO.data.tactile";
+            batteryKey = "avatar.NAO.data.battery";
 
         }
         //this method will broadcast image data to rabbitMQ server

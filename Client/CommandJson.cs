@@ -4,14 +4,9 @@ using System.Linq;
 using System.Text;
 
 using Newtonsoft.Json;
-
-namespace LumenServer
+namespace Client
 {
-    class CommandJson
-    {
-        
-    }
-
+    
     public class Command
     {
         [JsonProperty("type")]
@@ -20,7 +15,7 @@ namespace LumenServer
         public string method { get; set; }
         [JsonProperty("parameter")]
         public Parameter parameter { get; set; }
-        
+
     }
     public class Parameter
     {
@@ -29,12 +24,6 @@ namespace LumenServer
         public string postureName { get; set; }
         [JsonProperty("speed")]//belong to motion and posture
         public float speed { get; set; }
-
-        //Sonar
-        [JsonProperty("rightSensor")]
-        public float RightSensor { get; set; }
-        [JsonProperty("leftSensor")]
-        public float LeftSensor { get; set; }
 
         //motion parameter
         [JsonProperty("jointNames")]
@@ -65,9 +54,5 @@ namespace LumenServer
         //AudioDeviceParameter
         [JsonProperty("wavFile")]
         public string wavFile { get; set; }
-        [JsonProperty("recordingName")]
-        public string recordingName { get; set; }
     }
-    
-    
 }

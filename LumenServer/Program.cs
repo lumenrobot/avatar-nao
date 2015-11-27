@@ -66,7 +66,27 @@ namespace LumenServer
             commandHandler.startHandling();
             //Application.Run();
             //setting up the server
-           
+            //while (true)
+            //{
+            //    if (aquisition.connection == false)
+            //    {
+            //        if (aquisition.connectionCheck.IsAlive == false && broadcast.connectionCheck.IsAlive == false && commandHandler.connectionCheck.IsAlive == false)
+            //        {
+            //            aquisition = new DataAquisition();
+            //            broadcast = new DataBroadcast();
+            //            commandHandler = new CommandHandler();
+            //            connectToNao();
+            //            //start to retrive NAO data;
+
+            //            aquisition.startAquisitioning();
+            //            //start broadcasting data
+
+            //            broadcast.startBroadcasting();
+            //            //start handling command
+            //            commandHandler.startHandling();
+            //        }
+            //    }
+            //}
         }
         
         private static void connectToNao()
@@ -74,8 +94,7 @@ namespace LumenServer
             Console.WriteLine("NAO SERVER VERSION 3.0");
             //ProcessStartInfo start = new ProcessStartInfo();
             //start.FileName = @"C:/Python27/python.exe";
-            //start.WorkingDirectory = Environment.CurrentDirectory;
-            //start.Arguments = @"server.py";
+            //start.Arguments = @"""C:/Users/Ahmad Syarif/git/NaoServer/LumenServer/bin/Debug/server.py""";
             //start.UseShellExecute = false;
             //start.RedirectStandardOutput = true;
             //Process.Start(start);
@@ -98,8 +117,7 @@ namespace LumenServer
                 //}
 
                 //Console.Write("Please enter NAO IP address : ");
-                Console.Write("please enter NAO IP : ");
-                naoIP = Console.ReadLine();
+                naoIP = "169.254.89.225";
                 Console.WriteLine("Connecting to NAO...");
                 MotionProxy motion = new MotionProxy(naoIP, naoPort);
                 RobotPostureProxy posture = new RobotPostureProxy(naoIP, naoPort);
@@ -127,10 +145,10 @@ namespace LumenServer
                 //tts.Dispose();
                 // */
             }
-            catch
+            catch(Exception e)
             {
                 //if can't connect to NAO, program will ask user to enter IP address again
-                Console.WriteLine("unable to connect to NAO");
+                Console.WriteLine("unable to connect to NAO"+e.ToString());
                 goto tryConnect;
             }
             //Console.WriteLine("Initializing NAO Server...");
@@ -149,8 +167,8 @@ namespace LumenServer
         private static void connectToRabbitMQ()
         {
             factory = new ConnectionFactory();
-            //factory.Uri = "amqp://lumen:lumen@167.205.56.130/%2F";
-            factory.Uri = "amqp://guest:guest@127.0.0.1/%2F";
+            factory.Uri = "amqp://lumen:lumen@167.205.66.76/%2F";
+            //factory.Uri = "amqp://lumen:lumen@localhost/%2F";
             connection = factory.CreateConnection();
         }
         private static void delay(int time)
