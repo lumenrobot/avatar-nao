@@ -38,7 +38,7 @@ public class NaoSpeechSynthesisRouter extends RouteBuilder {
         // lumen.speech.expression
         // TODO: we should delay e.g. 500ms to see if speech-expression handles it (and notifies with actionStatus=ACTIVE_ACTION_STATUS),
         // otherwise NAO TTS will handle it
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=lumen.speech.synthesis")
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + LumenChannel.SPEECH_SYNTHESIS.key() + "&routingKey=" + LumenChannel.SPEECH_SYNTHESIS.key())
                 .to("log:IN.lumen.speech.synthesis?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(

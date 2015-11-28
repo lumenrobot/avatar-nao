@@ -50,7 +50,7 @@ public class SonarRouter extends RouteBuilder {
                     exchange.getIn().setBody(sonarState);
                 })
                 .bean(toJson)
-                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar." + avatarId + ".data.sonar")
-                .to("log:sonar?showAll=true&multiline=true");
+                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&skipQueueDeclare=true&autoDelete=false&routingKey=avatar." + avatarId + ".data.sonar");
+                //.to("log:sonar?showAll=true&multiline=true");
     }
 }

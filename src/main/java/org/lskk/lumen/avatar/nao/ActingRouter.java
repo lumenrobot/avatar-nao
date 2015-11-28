@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.lskk.lumen.core.ActingPerformance;
+import org.lskk.lumen.core.AvatarChannel;
 import org.lskk.lumen.core.LumenThing;
 import org.lskk.lumen.core.Status;
 import org.lskk.lumen.core.util.AsError;
@@ -38,8 +39,9 @@ public class ActingRouter extends RouteBuilder {
     public void configure() throws Exception {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.acting")
-                .to("log:IN.avatar.nao1.acting?showHeaders=true&showAll=true&multiline=true")
+        final String avatarId = "nao1";
+        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + AvatarChannel.ACTING.key(avatarId) + "&routingKey=" + AvatarChannel.ACTING.key(avatarId))
+                .to("log:IN." + AvatarChannel.ACTING.key(avatarId) + "?showHeaders=true&showAll=true&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(exchange.getIn().getBody(byte[].class), LumenThing.class);
                     log.info("Got actor command: {}", thing);
