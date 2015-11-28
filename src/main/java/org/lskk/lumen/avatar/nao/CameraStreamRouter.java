@@ -209,7 +209,7 @@ public class CameraStreamRouter extends RouteBuilder {
                 .setHeader(RabbitMQConstants.EXPIRATION, constant("5000"))
                 .bean(toJson)
                 .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=DUMMY&skipQueueDeclare=true")
-                .to("log:" + CameraStreamRouter.class.getName() + "/" + avatarId + "?level=DEBUG&showHeaders=true&showProperties=true&showBody=false&multiline=false"); // &showAll=true
+                .to("log:" + CameraStreamRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showProperties=true&showBody=false&multiline=true"); // &showAll=true
 //                .bean(toJson)
 //                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar.nao1.camera.main");
         //.to("log:OUT.avatar.nao1.camera.main?showHeaders=true&showAll=true&multiline=true");
