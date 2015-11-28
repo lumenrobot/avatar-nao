@@ -204,5 +204,14 @@ public class NaoConfig {
         }
     }
 
+    @Bean
+    public ALRobotPoseProxy robotPoseProxy()throws IOException{
+        try {
+            log.info("Initializing Robot Pose at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALRobotPoseProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO Pose at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
 
 }
