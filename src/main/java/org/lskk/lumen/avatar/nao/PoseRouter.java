@@ -1,14 +1,10 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALRobotPoseProxy;
-import com.aldebaran.proxy.ALRobotPostureProxy;
-import com.aldebaran.proxy.ALSonarProxy;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
-import org.joda.time.DateTime;
-import org.lskk.lumen.core.BatteryState;
-import org.lskk.lumen.core.SonarState;
+import org.lskk.lumen.core.RobotPoseState;
 import org.lskk.lumen.core.util.AsError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +16,9 @@ import javax.inject.Inject;
  * Created by student on 11/20/2015.
  */
 @Component
-public class PostureRouter extends RouteBuilder {
+public class PoseRouter extends RouteBuilder {
 
-    private static final Logger log = LoggerFactory.getLogger(PostureRouter.class);
+    private static final Logger log = LoggerFactory.getLogger(PoseRouter.class);
 
     @Inject
     private ToJson toJson;
@@ -39,16 +35,18 @@ public class PostureRouter extends RouteBuilder {
         errorHandler(new LoggingErrorHandlerBuilder(log));
         final String avatarId = "nao1";
         final int period = 1000;
-        log.info("Sonar capture timer with period = {}ms", period);
-        from("timer:sonar?period=" + period)
+        log.info("robotPose capture timer with period = {}ms", period);
+        from("timer:robotPose?period=" + period)
                 .process(exchange -> {
-                    final ALRobotPoseProxy robotPoseState  = new ALRobotPoseProxy();
-                    robotPoseState.version((string) robotPoseProxy.getPoseNames());
-
+                    final RobotPoseState robotPoseState = new RobotPoseState();
+                    for (int i = 0; i < robotPoseProxy.getPoseNames().getSize(); i++) {
+                        robotPoseState.getPoseNames().add(robotPoseProxy.getPoseNames().getElement(i).toString());
+                    }
+                    robotPoseState.setActualPoseAndTime(robotPoseProxy.getActualPoseAndTime().toString());
                     exchange.getIn().setBody(robotPoseState);
                 })
                 .bean(toJson)
-                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&routingKey=avatar." + avatarId + ".data.sonar")
-                .to("log:sonar?showAll=true&multiline=true");
+                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar." + avatarId + ".data.robotPose")
+                .to("log:robotPose?showAll=true&multiline=true");
     }
 }
