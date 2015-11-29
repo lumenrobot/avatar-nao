@@ -42,7 +42,8 @@ public class PoseRouter extends RouteBuilder {
                     for (int i = 0; i < robotPoseProxy.getPoseNames().getSize(); i++) {
                         robotPoseState.getPoseNames().add(robotPoseProxy.getPoseNames().getElement(i).toString());
                     }
-                    robotPoseState.setActualPoseAndTime(robotPoseProxy.getActualPoseAndTime().toString());
+                    robotPoseState.setActualPoseName(robotPoseProxy.getActualPoseAndTime().getElement(0).toString());
+                    robotPoseState.setActualPoseTime(robotPoseProxy.getActualPoseAndTime().getElement(1).toFloat());
                     exchange.getIn().setBody(robotPoseState);
                 })
                 .bean(toJson)
