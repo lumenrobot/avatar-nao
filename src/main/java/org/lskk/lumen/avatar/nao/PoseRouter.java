@@ -46,7 +46,7 @@ public class PoseRouter extends RouteBuilder {
                     exchange.getIn().setBody(robotPoseState);
                 })
                 .bean(toJson)
-                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar." + avatarId + ".data.robotPose")
+                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar." + avatarId + ".data.robotpose")
                 .to("log:robotPose?showAll=true&multiline=true");
     }
 }
