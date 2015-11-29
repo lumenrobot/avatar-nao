@@ -46,7 +46,7 @@ public class CommandRouter extends RouteBuilder {
         // avatar.*.command
         final String avatarId = "nao1";
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=" + AvatarChannel.COMMAND.key(avatarId) + "&routingKey=" + AvatarChannel.COMMAND.key(avatarId))
-                .to("log:IN." + AvatarChannel.COMMAND.key(avatarId) + "?showHeaders=true&showAll=true&multiline=true")
+                .to(String.format("log:IN.%s?showHeaders=true&showAll=true&multiline=true", AvatarChannel.COMMAND.key(avatarId)))
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                                 exchange.getIn().getBody(byte[].class), LumenThing.class);
