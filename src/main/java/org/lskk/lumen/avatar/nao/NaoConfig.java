@@ -214,4 +214,15 @@ public class NaoConfig {
         }
     }
 
+    @Bean
+    public ALMotionProxy motionProxy()throws IOException{
+        try {
+            log.info("Initializing Motion at {}:{}...", getNaoHost(), getNaoPort());
+            return new ALMotionProxy(getNaoHost(), getNaoPort());
+        } catch (Exception e) {
+            throw new IOException("Cannot connect NAO Motion at " + getNaoHost() + ":" + getNaoPort(), e);
+        }
+    }
+
+
 }
