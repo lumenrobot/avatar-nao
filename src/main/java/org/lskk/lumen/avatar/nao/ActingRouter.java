@@ -68,6 +68,14 @@ public class ActingRouter extends RouteBuilder {
                                             new Variant(new float[]{-0.9f, -0.44f, 0.53f, 1.2f, -0.2f}), 0.2f);
                                     Thread.sleep(1000);
                                     motion.setAngles(
+                                            new Variant(new String[]{"RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw"}),
+                                            new Variant(new float[]{-0.9f, -0.44f, 0.53f, 0.3f, -0.2f}), 0.2f);
+                                    Thread.sleep(1000);
+                                    motion.setAngles(
+                                            new Variant(new String[]{"RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw"}),
+                                            new Variant(new float[]{-0.9f, -0.44f, 0.53f, 1.2f, -0.2f}), 0.2f);
+                                    Thread.sleep(1000);
+                                    motion.setAngles(
                                             new Variant(new String[]{"RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw", "RHand"}),
                                             new Variant(new float[]{-0.9f, -0.44f, 0.53f, 0.3f, -0.2f, 1.0f}), 0.2f);
                                     Thread.sleep(1000);
@@ -85,6 +93,7 @@ public class ActingRouter extends RouteBuilder {
                                                     -0.9f, 0.71f, -0.79f, -0.88f, 0.42f
                                             }), 0.2f);
                                     motion.openHand("LHand");
+                                    Thread.sleep(45000);
                                     break;
 
                                 case DANCE_GANGNAM:

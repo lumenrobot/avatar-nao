@@ -129,6 +129,7 @@ public class CameraStreamRouter extends RouteBuilder {
                     } finally {
 //                        videoDevice.releaseImage(NaoVideoConfig.GVM_BOTTOM_ID);
                         videoDevice.releaseImage(NaoVideoConfig.GVM_TOP_ID);
+                        bottomImageRemoteVariant.delete();
                     }
                     videoDevice.setActiveCamera(0);
                     final Variant topImageRemoteVariant = videoDevice.getImageRemote(NaoVideoConfig.GVM_TOP_ID);
@@ -139,6 +140,7 @@ public class CameraStreamRouter extends RouteBuilder {
                     } finally {
 //                        videoDevice.releaseImage(NaoVideoConfig.GVM_BOTTOM_ID);
                         videoDevice.releaseImage(NaoVideoConfig.GVM_TOP_ID);
+                        topImageRemoteVariant.delete();
                     }
                     log.trace("Image {}/{}={} bytes, {}/{}={} bytes", NaoVideoConfig.GVM_TOP_ID, topId, topYuv422.length,
                             NaoVideoConfig.GVM_BOTTOM_ID, bottomId, bottomYuv422.length);

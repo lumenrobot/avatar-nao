@@ -48,6 +48,6 @@ public class PoseRouter extends RouteBuilder {
                 })
                 .bean(toJson)
                 .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar." + avatarId + ".data.robotpose")
-                .to("log:robotPose?showAll=true&multiline=true");
+                .to("log:" + PoseRouter.class.getName() + "." + avatarId + "?level=TRACE&showAll=true&multiline=true");
     }
 }
