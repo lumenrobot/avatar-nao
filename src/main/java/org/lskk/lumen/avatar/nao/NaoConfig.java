@@ -81,11 +81,11 @@ public class NaoConfig {
 */
 
     public String getNaoHost() {
-        return env.getRequiredProperty("nao.host");
+        return env.getRequiredProperty("nao1.host");
     }
 
     public int getNaoPort() {
-        return env.getProperty("nao.port", Integer.class, 9559);
+        return env.getRequiredProperty("nao1.port", Integer.class);
     }
 
     @Bean(destroyMethod = "shutdown") @ForNao
