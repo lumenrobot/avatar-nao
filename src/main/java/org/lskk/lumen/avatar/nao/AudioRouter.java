@@ -230,7 +230,7 @@ public class AudioRouter extends RouteBuilder {
         // audio.out
         final String sedaUri = "seda:audio.out." + avatarId;
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.CHAT_OUTBOX.key(avatarId) + "&routingKey=" + AvatarChannel.CHAT_OUTBOX.key(avatarId))
-                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showAll=true&showBody=false&multiline=true")
+                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showBody=false&multiline=true")
                 .process(exchange -> {
                     final LumenThing thing = toJson.getMapper().readValue(
                             exchange.getIn().getBody(byte[].class), LumenThing.class);
@@ -247,7 +247,7 @@ public class AudioRouter extends RouteBuilder {
                     }
                 }).filter().body(AudioObject.class).bean(toJson).to(sedaUri);
         from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.AUDIO_OUT.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO_OUT.key(avatarId))
-                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?showHeaders=true&showAll=true&showBody=false&multiline=true")
+                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?showHeaders=true&showBody=false&multiline=true")
                 .to(sedaUri);
         from(sedaUri)
                 .process(exchange -> {
