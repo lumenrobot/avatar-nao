@@ -93,5 +93,4 @@ public class CommandRouter extends RouteBuilder {
                 .bean(toJson);
 //                .to("log:OUT.avatar.nao1.command");
     }
-
 }
