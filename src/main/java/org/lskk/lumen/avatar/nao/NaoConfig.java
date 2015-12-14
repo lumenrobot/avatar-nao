@@ -61,6 +61,7 @@ public class NaoConfig {
 
     @PreDestroy
     public void destroy() {
+        log.info("Shutting down {} NAO avatars: {}", controllers.size(), controllers.keySet());
         controllers.values().parallelStream().forEach(controller -> {
             try {
                 controller.destroy();

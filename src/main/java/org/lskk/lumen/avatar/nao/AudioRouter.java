@@ -190,10 +190,10 @@ public class AudioRouter extends RouteBuilder {
                             log.debug("Downloading {} ...", remoteFile);
                             final byte[] rawData;
                             final FTPClient ftpClient = new FTPClient();
-                            ftpClient.connect(naoConfig.getNaoHost());
+                            ftpClient.connect(nao.getHost());
                             try {
                                 Preconditions.checkArgument(ftpClient.login(naoUser, naoPassword),
-                                        "Cannot connect to FTP {} using user '{}'", naoConfig.getNaoHost(), naoUser);
+                                        "Cannot connect to FTP {} using user '{}'", nao.getHost(), naoUser);
                                 ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
                                 try (InputStream ftpis = ftpClient.retrieveFileStream(remoteFile)) {
                                     rawData = IOUtils.toByteArray(ftpis);
