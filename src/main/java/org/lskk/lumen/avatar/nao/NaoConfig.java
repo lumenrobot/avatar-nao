@@ -35,14 +35,6 @@ public class NaoConfig {
     @Inject
     private Environment env;
 
-    public String getNaoHost() {
-        return env.getRequiredProperty("nao1.host");
-    }
-
-    public int getNaoPort() {
-        return env.getRequiredProperty("nao1.port", Integer.class);
-    }
-
     @Bean(destroyMethod = "shutdown")
     @ForNao
     public ListeningExecutorService naoExecutor() {
@@ -52,8 +44,8 @@ public class NaoConfig {
     @PostConstruct
     public void init() {
         NAO_AVATAR_IDS.parallelStream().forEach(avatarId -> {
-            final String host = env.getProperty("nao1.host");
-            final int port = env.getProperty("nao1.port", Integer.class, 9559);
+            final String host = env.getProperty(avatarId + ".host");
+            final int port = env.getProperty(avatarId + ".port", Integer.class, 9559);
             if (host != null) {
                 try {
                     final NaoController naoController = new NaoController(avatarId, host, port, env, naoExecutor());
