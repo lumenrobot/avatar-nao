@@ -43,7 +43,8 @@ public class NaoConfig {
 
     @PostConstruct
     public void init() {
-        NAO_AVATAR_IDS.parallelStream().forEach(avatarId -> {
+        log.info("Checking {} avatar configurations: {}", NAO_AVATAR_IDS.size(), NAO_AVATAR_IDS);
+        NAO_AVATAR_IDS.stream().forEach(avatarId -> {
             final String host = env.getProperty(avatarId + ".host");
             final int port = env.getProperty(avatarId + ".port", Integer.class, 9559);
             if (host != null) {
@@ -62,7 +63,7 @@ public class NaoConfig {
     @PreDestroy
     public void destroy() {
         log.info("Shutting down {} NAO avatars: {}", controllers.size(), controllers.keySet());
-        controllers.values().parallelStream().forEach(controller -> {
+        controllers.values().stream().forEach(controller -> {
             try {
                 controller.destroy();
             } catch (IOException e) {

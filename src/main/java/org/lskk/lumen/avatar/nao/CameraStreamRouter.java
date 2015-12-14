@@ -75,7 +75,9 @@ public class CameraStreamRouter extends RouteBuilder {
 //            yuv422Mat.asByteBuffer().put(topImg);
             bgrMat = new opencv_core.Mat(height, width, opencv_core.CV_8UC3);
             try {
+                log.trace("Converting color from {}", yuv422Mat);
                 opencv_imgproc.cvtColor(yuv422Mat, bgrMat, opencv_imgproc.CV_YUV2BGR_YUYV);
+                log.trace("Encoding JPEG from {}", bgrMat);
                 final BytePointer bufPtr = new BytePointer();
                 try {
                     opencv_highgui.imencode(".jpg", bgrMat, bufPtr);

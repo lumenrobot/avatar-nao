@@ -142,12 +142,12 @@ public class NaoController {
     public void destroyVideo() throws IOException {
         try {
             log.info("Releasing images {} VideoDevice '{}' '{}' ...", avatarId, GVM_TOP_ID, GVM_BOTTOM_ID);
-//            naoVideoDevice().releaseImage(GVM_BOTTOM_ID);
-            naoVideoDevice().releaseImage(GVM_TOP_ID);
+//            videoDevice.releaseImage(GVM_BOTTOM_ID);
+            videoDevice.releaseImage(GVM_TOP_ID);
         } finally {
             log.info("Unsubscribe {} VideoDevice '{}' '{}' ...", avatarId, GVM_TOP_ID, GVM_BOTTOM_ID);
-//            naoVideoDevice().unsubscribe(GVM_BOTTOM_ID);
-            naoVideoDevice().unsubscribe(GVM_TOP_ID);
+//            videoDevice.unsubscribe(GVM_BOTTOM_ID);
+            videoDevice.unsubscribe(GVM_TOP_ID);
         }
     }
 
