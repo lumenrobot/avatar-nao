@@ -1,6 +1,7 @@
 package org.lskk.lumen.avatar.nao;
 
 import com.aldebaran.proxy.ALBatteryProxy;
+import com.aldebaran.proxy.ALRobotPoseProxy;
 import com.aldebaran.proxy.ALSonarProxy;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.LoggingErrorHandlerBuilder;
@@ -24,11 +25,11 @@ public class SonarRouter extends RouteBuilder {
     private static final Logger log = LoggerFactory.getLogger(SonarRouter.class);
 
     @Inject
+    private NaoConfig naoConfig;
+    @Inject
     private ToJson toJson;
     @Inject
     private AsError asError;
-    @Inject
-    private ALSonarProxy sonarProxy;
     @Inject
     private ProducerTemplate producer;
 
@@ -36,21 +37,24 @@ public class SonarRouter extends RouteBuilder {
     public void configure() throws Exception {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
-        final String avatarId = "nao1";
         final int period = 1000;
         log.info("Sonar capture timer with period = {}ms", period);
-        from("timer:sonar?period=" + period)
-                .process(exchange -> {
-                    final SonarState sonarState = new SonarState();
-                    // sonarState. setPercentage((double) batteryProxy.getBatteryCharge());
-                    sonarState.setLeftSensor((double) sonarProxy.getCurrentPrecision());
-                    sonarState.setRightSensor((double) sonarProxy.getCurrentPrecision());
-                    //  sonarState.setDateCreated(new DateTime());
-                    sonarState.setDateCreated(new DateTime());
-                    exchange.getIn().setBody(sonarState);
-                })
-                .bean(toJson)
-                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&skipQueueDeclare=true&autoDelete=false&routingKey=avatar." + avatarId + ".data.sonar")
-                .to("log:" + SonarRouter.class.getName() + "." + avatarId + "?level=TRACE&showAll=true&multiline=true");
+        for (final String avatarId : naoConfig.getControllerAvatarIds()) {
+            final NaoController nao = naoConfig.get(avatarId);
+            final ALSonarProxy sonarProxy = nao.getSonar();
+            from("timer:sonar?period=" + period)
+                    .process(exchange -> {
+                        final SonarState sonarState = new SonarState();
+                        // sonarState. setPercentage((double) batteryProxy.getBatteryCharge());
+                        sonarState.setLeftSensor((double) sonarProxy.getCurrentPrecision());
+                        sonarState.setRightSensor((double) sonarProxy.getCurrentPrecision());
+                        //  sonarState.setDateCreated(new DateTime());
+                        sonarState.setDateCreated(new DateTime());
+                        exchange.getIn().setBody(sonarState);
+                    })
+                    .bean(toJson)
+                    .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&skipQueueDeclare=true&autoDelete=false&routingKey=avatar." + avatarId + ".data.sonar")
+                    .to("log:" + SonarRouter.class.getName() + "." + avatarId + "?level=TRACE&showAll=true&multiline=true");
+        }
     }
 }

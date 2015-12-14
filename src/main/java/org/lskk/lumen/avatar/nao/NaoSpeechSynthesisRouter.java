@@ -25,11 +25,11 @@ public class NaoSpeechSynthesisRouter extends RouteBuilder {
     private static final Logger log = LoggerFactory.getLogger(NaoSpeechSynthesisRouter.class);
 
     @Inject
+    private NaoConfig naoConfig;
+    @Inject
     private ToJson toJson;
     @Inject
     private AsError asError;
-    @Inject
-    private ALTextToSpeechProxy tts;
 
     @Override
     public void configure() throws Exception {
@@ -46,11 +46,11 @@ public class NaoSpeechSynthesisRouter extends RouteBuilder {
                     log.info("Got speech.synthesis command: {}", thing);
                     if (thing instanceof CommunicateAction) {
                         final CommunicateAction communicateAction = (CommunicateAction) thing;
-                        if (StringUtils.startsWith(communicateAction.getAvatarId(), "nao")) {
+                        if (naoConfig.getControllerAvatarIds().contains(communicateAction.getAvatarId())) {
                             final Locale lang = Optional.ofNullable(communicateAction.getInLanguage()).orElse(Locale.US);
                             if ("en".equals(lang.getLanguage())) {
                                 log.info("Speaking {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
-                                tts.say(communicateAction.getObject());
+                                naoConfig.get(communicateAction.getAvatarId()).getTts().say(communicateAction.getObject());
                                 log.debug("Spoken {} for {}: {}", lang.toLanguageTag(), communicateAction.getAvatarId(), communicateAction.getObject());
                             } else {
                                 log.info("Language '{}' not supported by {}, skipping: {}",

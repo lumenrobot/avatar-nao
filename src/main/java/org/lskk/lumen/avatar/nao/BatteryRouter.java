@@ -1,5 +1,6 @@
 package org.lskk.lumen.avatar.nao;
 
+import com.aldebaran.proxy.ALAudioPlayerProxy;
 import com.aldebaran.proxy.ALBatteryProxy;
 import com.aldebaran.proxy.ALVideoDeviceProxy;
 import org.apache.camel.ProducerTemplate;
@@ -24,11 +25,11 @@ public class BatteryRouter extends RouteBuilder {
     private static final Logger log = LoggerFactory.getLogger(BatteryRouter.class);
 
     @Inject
+    private NaoConfig naoConfig;
+    @Inject
     private ToJson toJson;
     @Inject
     private AsError asError;
-    @Inject
-    private ALBatteryProxy batteryProxy;
     @Inject
     private ProducerTemplate producer;
 
@@ -36,18 +37,21 @@ public class BatteryRouter extends RouteBuilder {
     public void configure() throws Exception {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
-        final String avatarId = "nao1";
         final int period = 1000;
         log.info("Battery capture timer with period = {}ms", period);
-        from("timer:battery?period=" + period)
-                .process(exchange -> {
-                    final BatteryState batteryState = new BatteryState();
-                    batteryState.setPercentage((double) batteryProxy.getBatteryCharge());
-                    batteryState.setDateCreated(new DateTime());
-                    exchange.getIn().setBody(batteryState);
-                })
-                .bean(toJson)
-                .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&skipQueueDeclare=true&autoDelete=false&routingKey=avatar." + avatarId + ".data.battery")
-                .to("log:" + BatteryRouter.class.getName() + "." + avatarId + "?level=TRACE&showAll=true&multiline=true");
+        for (final String avatarId : naoConfig.getControllerAvatarIds()) {
+            final NaoController nao = naoConfig.get(avatarId);
+            final ALBatteryProxy batteryProxy = nao.getBattery();
+            from("timer:battery?period=" + period)
+                    .process(exchange -> {
+                        final BatteryState batteryState = new BatteryState();
+                        batteryState.setPercentage((double) batteryProxy.getBatteryCharge());
+                        batteryState.setDateCreated(new DateTime());
+                        exchange.getIn().setBody(batteryState);
+                    })
+                    .bean(toJson)
+                    .to("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&skipQueueDeclare=true&autoDelete=false&routingKey=avatar." + avatarId + ".data.battery")
+                    .to("log:" + BatteryRouter.class.getName() + "." + avatarId + "?level=TRACE&showAll=true&multiline=true");
+        }
     }
 }

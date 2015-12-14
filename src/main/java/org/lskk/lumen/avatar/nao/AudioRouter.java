@@ -44,12 +44,6 @@ public class AudioRouter extends RouteBuilder {
     @Inject
     private NaoConfig naoConfig;
     @Inject
-    private ALAudioDeviceProxy audioDevice;
-    @Inject
-    private ALAudioPlayerProxy audioPlayer;
-    @Inject
-    private ALAudioRecorderProxy audioRecorder;
-    @Inject
     private ToJson toJson;
     @Inject
     private AsError asError;
@@ -164,106 +158,110 @@ public class AudioRouter extends RouteBuilder {
         onException(Exception.class).bean(asError).bean(toJson).handled(true);
         errorHandler(new LoggingErrorHandlerBuilder(log));
         // audio
-        final String avatarId = "nao1";
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.AUDIO.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO.key(avatarId))
-                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showAll=true&multiline=true")
-                .process(exchange -> {
-                    final LumenThing thing = toJson.getMapper().readValue(
-                            exchange.getIn().getBody(byte[].class), LumenThing.class);
-                    log.info("Got avatar command: {}", thing);
-                    if (thing instanceof StopAudio) {
-                        log.info("Stopping audio!");
-                        audioPlayer.stopAll();
-                        exchange.getIn().setBody(new Status());
-                    } else if (thing instanceof RecordAudio) {
-                        final int recordingSampleRate = 16000;
-                        final String recordingMimeType = "audio/ogg";
-                        final String recordingExtension = "ogg";
-                        final RecordAudio recordAudio = (RecordAudio) thing;
-                        final String naoHomeFolder = "/home/nao";
-                        final String remoteFile = "recordings/microphones/recording." + recordingExtension;
-                        log.info("Executing audioDevice.record() to {} ...", remoteFile);
-                        audioRecorder.stopMicrophonesRecording();
-                        audioRecorder.startMicrophonesRecording(naoHomeFolder + "/" + remoteFile, recordingExtension, recordingSampleRate,
-                                new Variant(new int[]{0, 0, 1, 0}));
-                        Thread.sleep(Math.round(Optional.ofNullable(recordAudio.getDuration()).orElse(5.0) * 1000));
-                        audioRecorder.stopMicrophonesRecording();
+        for (final String avatarId : naoConfig.getControllerAvatarIds()) {
+            final NaoController nao = naoConfig.get(avatarId);
+            final ALAudioPlayerProxy audioPlayer = nao.getAudioPlayer();
+            final ALAudioDeviceProxy audioDevice = nao.getAudioDevice();
+            final ALAudioRecorderProxy audioRecorder = nao.getAudioRecorder();
+            from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.AUDIO.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO.key(avatarId))
+                    .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showAll=true&multiline=true")
+                    .process(exchange -> {
+                        final LumenThing thing = toJson.getMapper().readValue(
+                                exchange.getIn().getBody(byte[].class), LumenThing.class);
+                        log.info("Got avatar command: {}", thing);
+                        if (thing instanceof StopAudio) {
+                            log.info("Stopping audio!");
+                            audioPlayer.stopAll();
+                            exchange.getIn().setBody(new Status());
+                        } else if (thing instanceof RecordAudio) {
+                            final int recordingSampleRate = 16000;
+                            final String recordingMimeType = "audio/ogg";
+                            final String recordingExtension = "ogg";
+                            final RecordAudio recordAudio = (RecordAudio) thing;
+                            final String naoHomeFolder = "/home/nao";
+                            final String remoteFile = "recordings/microphones/recording." + recordingExtension;
+                            log.info("Executing audioDevice.record() to {} ...", remoteFile);
+                            audioRecorder.stopMicrophonesRecording();
+                            audioRecorder.startMicrophonesRecording(naoHomeFolder + "/" + remoteFile, recordingExtension, recordingSampleRate,
+                                    new Variant(new int[]{0, 0, 1, 0}));
+                            Thread.sleep(Math.round(Optional.ofNullable(recordAudio.getDuration()).orElse(5.0) * 1000));
+                            audioRecorder.stopMicrophonesRecording();
 
-                        log.debug("Downloading {} ...", remoteFile);
-                        final byte[] rawData;
-                        final FTPClient ftpClient = new FTPClient();
-                        ftpClient.connect(naoConfig.getNaoHost());
-                        try {
-                            Preconditions.checkArgument(ftpClient.login(naoUser, naoPassword),
-                                    "Cannot connect to FTP {} using user '{}'", naoConfig.getNaoHost(), naoUser);
-                            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-                            try (InputStream ftpis = ftpClient.retrieveFileStream(remoteFile)) {
-                                rawData = IOUtils.toByteArray(ftpis);
-                                log.debug("Retrieved {} bytes of recorded file", rawData.length);
+                            log.debug("Downloading {} ...", remoteFile);
+                            final byte[] rawData;
+                            final FTPClient ftpClient = new FTPClient();
+                            ftpClient.connect(naoConfig.getNaoHost());
+                            try {
+                                Preconditions.checkArgument(ftpClient.login(naoUser, naoPassword),
+                                        "Cannot connect to FTP {} using user '{}'", naoConfig.getNaoHost(), naoUser);
+                                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+                                try (InputStream ftpis = ftpClient.retrieveFileStream(remoteFile)) {
+                                    rawData = IOUtils.toByteArray(ftpis);
+                                    log.debug("Retrieved {} bytes of recorded file", rawData.length);
+                                }
+                            } finally {
+                                ftpClient.disconnect();
                             }
-                        } finally {
-                            ftpClient.disconnect();
+
+                            final AudioObject audioObject = new AudioObject();
+                            audioObject.setName(FilenameUtils.getName(remoteFile));
+                            audioObject.setContentSize((long) rawData.length);
+                            audioObject.setContentType(recordingMimeType + "; rate=" + recordingSampleRate);
+                            audioObject.setDateCreated(new DateTime(DateTimeZone.forID("Asia/Jakarta")));
+                            audioObject.setUploadDate(audioObject.getDateCreated());
+                            audioObject.setDatePublished(audioObject.getDateCreated());
+                            audioObject.setDateModified(audioObject.getDateCreated());
+                            audioObject.setContentUrl("data:" + recordingMimeType + ";base64," +
+                                    Base64.encodeBase64String(rawData));
+                            audioObject.setUsedForChat(recordAudio.getUsedForChat());
+
+                            final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar.nao1.audio.in";
+                            producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
+                            log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
+
+                            exchange.getIn().setBody(new Status());
+                        } else {
+                            exchange.getOut().setBody(null);
                         }
+                    }).bean(toJson);
 
-                        final AudioObject audioObject = new AudioObject();
-                        audioObject.setName(FilenameUtils.getName(remoteFile));
-                        audioObject.setContentSize((long) rawData.length);
-                        audioObject.setContentType(recordingMimeType + "; rate=" + recordingSampleRate);
-                        audioObject.setDateCreated(new DateTime(DateTimeZone.forID("Asia/Jakarta")));
-                        audioObject.setUploadDate(audioObject.getDateCreated());
-                        audioObject.setDatePublished(audioObject.getDateCreated());
-                        audioObject.setDateModified(audioObject.getDateCreated());
-                        audioObject.setContentUrl("data:" + recordingMimeType + ";base64," +
-                                Base64.encodeBase64String(rawData));
-                        audioObject.setUsedForChat(recordAudio.getUsedForChat());
-
-                        final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar.nao1.audio.in";
-                        producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
-                        log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
-
-                        exchange.getIn().setBody(new Status());
-                    } else {
-                        exchange.getOut().setBody(null);
-                    }
-                }).bean(toJson);
-
-        // audio.out
-        final String sedaUri = "seda:audio.out." + avatarId;
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.CHAT_OUTBOX.key(avatarId) + "&routingKey=" + AvatarChannel.CHAT_OUTBOX.key(avatarId))
-                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showBody=false&multiline=true")
-                .process(exchange -> {
-                    final LumenThing thing = toJson.getMapper().readValue(
-                            exchange.getIn().getBody(byte[].class), LumenThing.class);
-                    log.info("Got {}'s chat.outbox: {}", avatarId, thing);
-                    if (thing instanceof CommunicateAction) {
-                        final CommunicateAction communicateAction = (CommunicateAction) thing;
-                        if (communicateAction.getAudio() != null) {
-                            exchange.getIn().setBody(communicateAction.getAudio());
+            // audio.out
+            final String sedaUri = "seda:audio.out." + avatarId;
+            from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.CHAT_OUTBOX.key(avatarId) + "&routingKey=" + AvatarChannel.CHAT_OUTBOX.key(avatarId))
+                    .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?level=DEBUG&showHeaders=true&showBody=false&multiline=true")
+                    .process(exchange -> {
+                        final LumenThing thing = toJson.getMapper().readValue(
+                                exchange.getIn().getBody(byte[].class), LumenThing.class);
+                        log.info("Got {}'s chat.outbox: {}", avatarId, thing);
+                        if (thing instanceof CommunicateAction) {
+                            final CommunicateAction communicateAction = (CommunicateAction) thing;
+                            if (communicateAction.getAudio() != null) {
+                                exchange.getIn().setBody(communicateAction.getAudio());
+                            } else {
+                                exchange.getIn().setBody(null);
+                            }
                         } else {
                             exchange.getIn().setBody(null);
                         }
-                    } else {
-                        exchange.getIn().setBody(null);
-                    }
-                }).filter().body(AudioObject.class).bean(toJson).to(sedaUri);
-        from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.AUDIO_OUT.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO_OUT.key(avatarId))
-                .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?showHeaders=true&showBody=false&multiline=true")
-                .to(sedaUri);
-        from(sedaUri)
-                .process(exchange -> {
-                    final LumenThing thing = toJson.getMapper().readValue(
-                            exchange.getIn().getBody(byte[].class), LumenThing.class);
-                    log.info("Got {}'s audio.out: {}", avatarId, thing);
-                    if (thing instanceof AudioObject) {
-                        final AudioObject playAudio = (AudioObject) thing;
-                        log.info("Play audio {}", playAudio.getContentUrl());
-                        final URI contentUrl = URI.create(playAudio.getContentUrl());
-                        if ("file".equals(contentUrl.getScheme())) {
-                            log.info("Playing locally: {}", contentUrl.getPath());
-                            audioPlayer.playFile(contentUrl.getPath());
-                            log.info("Played locally: {}", contentUrl.getPath());
-                        } else if ("data".equals(contentUrl.getScheme())) {
-                            final DataUri dataUri = DataUri.parse(playAudio.getContentUrl(), StandardCharsets.UTF_8);
+                    }).filter().body(AudioObject.class).bean(toJson).to(sedaUri);
+            from("rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&queue=nao:" + AvatarChannel.AUDIO_OUT.key(avatarId) + "&routingKey=" + AvatarChannel.AUDIO_OUT.key(avatarId))
+                    .to("log:" + AudioRouter.class.getName() + "." + avatarId + "?showHeaders=true&showBody=false&multiline=true")
+                    .to(sedaUri);
+            from(sedaUri)
+                    .process(exchange -> {
+                        final LumenThing thing = toJson.getMapper().readValue(
+                                exchange.getIn().getBody(byte[].class), LumenThing.class);
+                        log.info("Got {}'s audio.out: {}", avatarId, thing);
+                        if (thing instanceof AudioObject) {
+                            final AudioObject playAudio = (AudioObject) thing;
+                            log.info("Play audio {}", playAudio.getContentUrl());
+                            final URI contentUrl = URI.create(playAudio.getContentUrl());
+                            if ("file".equals(contentUrl.getScheme())) {
+                                log.info("Playing locally: {}", contentUrl.getPath());
+                                audioPlayer.playFile(contentUrl.getPath());
+                                log.info("Played locally: {}", contentUrl.getPath());
+                            } else if ("data".equals(contentUrl.getScheme())) {
+                                final DataUri dataUri = DataUri.parse(playAudio.getContentUrl(), StandardCharsets.UTF_8);
 
 //                            final String destFile = "/home/nao/tmp.mp3";
 //                            log.info("Uploading {} bytes to ftp://{}@{}{} ...", dataUri.getData().length, naoUser, naoConfig.getNaoHost(), destFile);
@@ -285,32 +283,33 @@ public class AudioRouter extends RouteBuilder {
 //                            audioPlayer.playFile(destFile);
 //                            log.info("Played uploaded file locally: {}", destFile);
 
-                            // using remotebuffer
-                            // IllegalArgumentException: Unsupported conversion: PCM_SIGNED 16000.0 Hz, 16 bit, mono, 2 bytes/frame, little-endian from VORBISENC 16000.0 Hz, unknown bits per sample, mono, 1 bytes/frame, 6000.0 frames/second,
-                            // at javax.sound.sampled.AudioSystem.getAudioInputStream(AudioSystem.java:974) ~[na:1.8.0_66]
-                            //final AudioData naoSound = convertAudioData(dataUri.getData(), naoFormat);
-                            // convert everything to PCM_SIGNED 16000 Hz mono 16-bit, unless already
-                            final AudioData naoSound = convertAudioDataUsingFfmpeg(ffmpegExecutable,
-                                    dataUri.getData(), naoFormat);
+                                // using remotebuffer
+                                // IllegalArgumentException: Unsupported conversion: PCM_SIGNED 16000.0 Hz, 16 bit, mono, 2 bytes/frame, little-endian from VORBISENC 16000.0 Hz, unknown bits per sample, mono, 1 bytes/frame, 6000.0 frames/second,
+                                // at javax.sound.sampled.AudioSystem.getAudioInputStream(AudioSystem.java:974) ~[na:1.8.0_66]
+                                //final AudioData naoSound = convertAudioData(dataUri.getData(), naoFormat);
+                                // convert everything to PCM_SIGNED 16000 Hz mono 16-bit, unless already
+                                final AudioData naoSound = convertAudioDataUsingFfmpeg(ffmpegExecutable,
+                                        dataUri.getData(), naoFormat);
 
-                            final Variant fStereoAudioData = new Variant(naoSound.getData());
-                            final int frameCount = naoSound.getData().length / naoSound.getFormat().getFrameSize();
-                            log.info("Playing converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
-                                    dataUri.getData().length, naoSound.getData().length,
-                                    frameCount, naoSound.getSourceFormat());
-                            audioDevice.setParameter("outputSampleRate", (int) naoSound.getFormat().getSampleRate());
-                            audioDevice.sendRemoteBufferToOutput(frameCount, fStereoAudioData);
-                            log.info("Played converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
-                                    dataUri.getData().length, naoSound.getData().length,
-                                    frameCount, naoSound.getSourceFormat());
+                                final Variant fStereoAudioData = new Variant(naoSound.getData());
+                                final int frameCount = naoSound.getData().length / naoSound.getFormat().getFrameSize();
+                                log.info("Playing converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
+                                        dataUri.getData().length, naoSound.getData().length,
+                                        frameCount, naoSound.getSourceFormat());
+                                audioDevice.setParameter("outputSampleRate", (int) naoSound.getFormat().getSampleRate());
+                                audioDevice.sendRemoteBufferToOutput(frameCount, fStereoAudioData);
+                                log.info("Played converted file from {} bytes to {} bytes PCM_SIGNED in {} frames from {}",
+                                        dataUri.getData().length, naoSound.getData().length,
+                                        frameCount, naoSound.getSourceFormat());
+                            } else {
+                                throw new NaoException("Unknown audio URL: " + contentUrl);
+                            }
+                            exchange.getIn().setBody(new Status());
                         } else {
-                            throw new NaoException("Unknown audio URL: " + contentUrl);
+                            exchange.getOut().setBody(null);
                         }
-                        exchange.getIn().setBody(new Status());
-                    } else {
-                        exchange.getOut().setBody(null);
-                    }
-                }).bean(toJson);
+                    }).bean(toJson);
+        }
     }
 
     protected AudioData convertAudioDataUsingFfmpeg(String ffmpegExecutable,
