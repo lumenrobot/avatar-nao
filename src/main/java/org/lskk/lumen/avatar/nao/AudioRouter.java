@@ -215,7 +215,7 @@ public class AudioRouter extends RouteBuilder {
                                     Base64.encodeBase64String(rawData));
                             audioObject.setUsedForChat(recordAudio.getUsedForChat());
 
-                            final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=avatar.nao1.audio.in";
+                            final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=" + AvatarChannel.AUDIO_IN.key(avatarId);
                             producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
                             log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
 
