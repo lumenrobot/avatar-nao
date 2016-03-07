@@ -12,6 +12,7 @@ import org.apache.camel.model.language.HeaderExpression;
 import org.apache.commons.lang3.StringUtils;
 import org.lskk.lumen.core.*;
 import org.lskk.lumen.core.util.AsError;
+import org.lskk.lumen.core.util.ToJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

@@ -21,6 +21,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.lskk.lumen.core.*;
 import org.lskk.lumen.core.util.AsError;
+import org.lskk.lumen.core.util.ToJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -216,7 +217,7 @@ public class AudioRouter extends RouteBuilder {
                             audioObject.setUsedForChat(recordAudio.getUsedForChat());
 
                             final String dataRecordingUri = "rabbitmq://localhost/amq.topic?connectionFactory=#amqpConnFactory&exchangeType=topic&autoDelete=false&skipQueueDeclare=true&routingKey=" + AvatarChannel.AUDIO_IN.key(avatarId);
-                            producerTemplate.sendBody(dataRecordingUri, toJson.mapper.writeValueAsBytes(audioObject));
+                            producerTemplate.sendBody(dataRecordingUri, toJson.getMapper().writeValueAsBytes(audioObject));
                             log.info("execution audioDevice.record() finished with {} bytes", rawData.length);
 
                             exchange.getIn().setBody(new Status());
